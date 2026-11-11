@@ -83,9 +83,9 @@ Descargá `tp3.exe` (Releases o carpeta `ejecutable/`) y abrilo con doble clic o
 **Opción B: código fuente (solo biblioteca estándar)**
 
 ```bash
-git clone https://github.com/<tu-usuario>/<nombre-del-repo>.git
-cd <nombre-del-repo>
-python tp3.py
+   git clone https://github.com/jeremendoza01/tp3.git
+   cd tp3
+   python tp3.py
 ```
 
 **💾 Recursos:** ≈ 1 GB de disco para `Datos.txt` (y otro para `Datos_CountingSort.txt`), ≈ 1 GB de RAM para Counting Sort y ≈ 0,5 GB para Heap/Heap Sort con 10 M de datos.
