@@ -8,7 +8,7 @@ import math
 # Aumentamos el límite de recursión para el Árbol AVL
 sys.setrecursionlimit(2000000)
 
-ARCHIVO_DATOS = "Datos.txtñ"
+ARCHIVO_DATOS = "Datos.txt"
 CANTIDAD_NUMEROS = 100000000 # 100 millones de números (n)
 RANGO_MAX = 100000000        # Rango de valores (k)
 
@@ -25,23 +25,26 @@ class NodoAVL:
         self.altura = 1
 
 class ArbolAVL:
+    #Es un Árbol de Búsqueda Equilibrado (AVL) que mantiene la propiedad de altura balanceada.
+    #Organiza los datos jerárquicamente y controla la altura de sus ramas para garantizar que las operaciones de búsqueda,
+    #inserción y eliminación sean siempre rápidas, evitando que se vuelva lento como una lista.
 
-    """Árbol AVL. Los valores repetidos se aceptan; el rebalanceo se decide
-    con el factor de balance del hijo (no comparando valores), lo que
-    garantiza el invariante AVL incluso con duplicados."""
  
     def __init__(self):
         self.raiz = None
         self.total_nodos = 0
- 
-    def obtener_altura(self, nodo):
+
+    #Devuelve la altura actual del nodo; 0 si es nulo.
+    def obtener_altura(self, nodo): 
         if not nodo: return 0
         return nodo.altura
  
+    #Calcula la diferencia de altura entre la rama izquierda y la derecha; 0 si es nulo.
     def obtener_balance(self, nodo):
         if not nodo: return 0
         return self.obtener_altura(nodo.izquierdo) - self.obtener_altura(nodo.derecho)
- 
+
+    #Giran los nodos afectados para restaurar el equilibrio de alturas, sin romper la regla: los menores a la izquierda, los mayores a la derecha.
     def rotacion_derecha(self, y):
         x = y.izquierdo
         T2 = x.derecho
@@ -59,10 +62,9 @@ class ArbolAVL:
         x.altura = 1 + max(self.obtener_altura(x.izquierdo), self.obtener_altura(x.derecho))
         y.altura = 1 + max(self.obtener_altura(y.izquierdo), self.obtener_altura(y.derecho))
         return y
- 
+
+    #Rebalancea el nodo actual y aplica la rotación necesaria (casos LL, RR, LR, RL).
     def rebalancear(self, raiz):
-        """Actualiza la altura y aplica la rotación necesaria (casos LL, RR, LR, RL).
-        Se usa tanto en inserción como en eliminación."""
         raiz.altura = 1 + max(self.obtener_altura(raiz.izquierdo), self.obtener_altura(raiz.derecho))
         balance = self.obtener_balance(raiz)
  
@@ -75,7 +77,8 @@ class ArbolAVL:
                 raiz.derecho = self.rotacion_derecha(raiz.derecho)
             return self.rotacion_izquierda(raiz)               # caso Derecha-Derecha
         return raiz
- 
+
+    #Inserta un valor en el árbol y rebalancea si es necesario.
     def insertar(self, raiz, valor):
         if not raiz:
             self.total_nodos += 1
@@ -85,19 +88,22 @@ class ArbolAVL:
         else:
             raiz.derecho = self.insertar(raiz.derecho, valor)
         return self.rebalancear(raiz)
- 
+
+    #Busca un valor en el árbol; devuelve el nodo si se encuentra, o None si no.
     def buscar(self, raiz, valor):
         if raiz is None or raiz.valor == valor:
             return raiz
         if raiz.valor < valor:
             return self.buscar(raiz.derecho, valor)
         return self.buscar(raiz.izquierdo, valor)
- 
+
+    #Encuentra el nodo con el valor mínimo en el subárbol dado.
     def nodo_minimo(self, nodo):
         if nodo is None or nodo.izquierdo is None:
             return nodo
         return self.nodo_minimo(nodo.izquierdo)
  
+    #Elimina un valor del árbol y rebalancea si es necesario.
     def eliminar(self, raiz, valor):
         if not raiz: return raiz
  
@@ -117,7 +123,8 @@ class ArbolAVL:
             raiz.derecho = self.eliminar(raiz.derecho, temp.valor)
  
         return self.rebalancear(raiz)
- 
+
+    #Recorrido InOrden del árbol, agregando valores a la lista resultado hasta alcanzar el límite.
     def in_orden(self, raiz, resultado, limite):
         if raiz and len(resultado) < limite:
             self.in_orden(raiz.izquierdo, resultado, limite)
@@ -125,14 +132,16 @@ class ArbolAVL:
             self.in_orden(raiz.derecho, resultado, limite)
 
 class MaxHeap:
-    """Implementación de Max Heap usando un arreglo (array-based)."""
+    #Implementación de Max Heap usando un arreglo (array-based).
     def __init__(self):
         self.heap = []
 
+    #Acá no hay punteros que consuman RAM extra. 
     def padre(self, i): return (i - 1) // 2
     def hijo_izq(self, i): return 2 * i + 1
     def hijo_der(self, i): return 2 * i + 2
 
+    #Agrega el número al final del arreglo y lo hace 'flotar' (sift-up)
     def insertar(self, valor):
         self.heap.append(valor)
         i = len(self.heap) - 1
@@ -140,6 +149,7 @@ class MaxHeap:
             self.heap[i], self.heap[self.padre(i)] = self.heap[self.padre(i)], self.heap[i]
             i = self.padre(i)
 
+    #Extrae el valor máximo del montículo y lo reorganiza.
     def extraer_maximo(self):
         if len(self.heap) == 0: return None
         if len(self.heap) == 1: return self.heap.pop()
@@ -149,6 +159,7 @@ class MaxHeap:
         self.heapify_down(0)
         return raiz
 
+    #Reorganiza el montículo desde la raíz hacia abajo (sift-down) para mantener la propiedad de Max Heap.
     def heapify_down(self, i):
         izq = self.hijo_izq(i)
         der = self.hijo_der(i)
@@ -162,6 +173,7 @@ class MaxHeap:
             self.heap[i], self.heap[mayor] = self.heap[mayor], self.heap[i]
             self.heapify_down(mayor)
 
+    #Busca un valor en el heap; devuelve el índice si se encuentra, o -1 si no.
     def buscar(self, valor):
         for i, val in enumerate(self.heap):
             if val == valor: return i
@@ -171,7 +183,7 @@ class MaxHeap:
 # FUNCIONES AUXILIARES
 # ==========================================
 def archivo_existe(nombre_archivo):
-    """Verifica si el archivo existe antes de operar sobre él."""
+    #Verifica si el archivo existe antes de operar sobre él.
     if not os.path.exists(nombre_archivo):
         print(f"\n[ERROR] El archivo '{nombre_archivo}' no existe.")
         print("Por favor, genera primero el archivo de datos seleccionando la opción 1.")
@@ -182,8 +194,11 @@ def archivo_existe(nombre_archivo):
 # FUNCIONES DE LAS CONSIGNAS (a - k)
 # ==========================================
 
+
 def generar_archivo_datos():
-    """Consigna a) Generación de datos."""
+    #Genera un archivo de texto con 100 millones de números aleatorios entre 0 y 100 millones.
+    #En vez de crear los 100 millones de números en la memoria de golpe, los genera y escribe en el disco duro por bloques de a un millón. Complejidad espacial O(1).
+    #Consigna a) Generación de datos.
     print(f"\nGenerando {CANTIDAD_NUMEROS} números. Esto puede tardar...")
     inicio = time.time()
     try:
@@ -197,7 +212,9 @@ def generar_archivo_datos():
         print(f"Error al generar el archivo: {e}")
 
 def buscar_max_min_y_frecuencia():
-    """Consignas b y c) Análisis empírico de complejidad O(n)."""
+    #Lee el archivo de texto línea por línea.
+    #Para contar las frecuencias a esa velocidad usa Counter, que por debajo es una Tabla Hash que registra y actualiza datos en tiempo constante O(1).
+    #Consignas b y c) Análisis empírico de complejidad O(n).
     if not archivo_existe(ARCHIVO_DATOS): return
         
     inicio = time.time()
@@ -224,8 +241,11 @@ def buscar_max_min_y_frecuencia():
     except Exception as e:
         print(f"Error durante el análisis: {e}")
 
+
 def ordenar_counting_sort():
-    """Consigna d) Complejidad temporal O(n + k)."""
+    #Ordena los datos usando Counting Sort, es eficiente para rangos limitados de valores.#
+    #Es una técnica de ordenamiento que cuenta la frecuencia de cada número y luego reconstruye el arreglo ordenado. Complejidad temporal O(n + k).#
+    #Consigna d)#
     if not archivo_existe(ARCHIVO_DATOS): return
         
     inicio = time.time()
@@ -251,7 +271,8 @@ def ordenar_counting_sort():
         print(f"Error en Counting Sort: {e}")
 
 def ordenar_selection_sort(limite):
-    """Consigna e) Selection Sort O(n^2). Acotado por seguridad"""
+    #Ordenamiento por fuerza bruta O(n^2). Busca exhaustivamente el elemento mínimo del subarreglo restante en cada iteración.
+    #Consigna e). Acotado por seguridad
     if not archivo_existe(ARCHIVO_DATOS): return
         
     inicio = time.time()
@@ -281,7 +302,8 @@ def ordenar_selection_sort(limite):
         print(f"Error en Selection Sort: {e}")
 
 def operar_arbol_avl(limite):
-    """Consigna i) Árbol AVL: construcción, inserción, búsqueda y eliminación."""
+    #Construye un Árbol AVL leyendo datos del archivo y luego te permite buscar y eliminar números de forma interactiva para medir los tiempos.
+    #Consigna i) Árbol AVL: construcción, inserción, búsqueda y eliminación.
     if not archivo_existe(ARCHIVO_DATOS): return
  
     arbol = ArbolAVL()
@@ -328,7 +350,9 @@ def operar_arbol_avl(limite):
         print(f"Error operando el AVL: {e}")
 
 def operar_heap(limite):
-    """Consigna j) Max Heap."""
+    # Usa Transformar y Conquistar: primero convierte la lista en un Max-Heap y luego extrae el máximo repetidamente.
+    # Garantiza una complejidad eficiente de O(n log n), ideal para ordenar millones de datos sin saturar la RAM.
+    #Consigna j) Max Heap.
     if not archivo_existe(ARCHIVO_DATOS): return
         
     heap_obj = MaxHeap()
@@ -371,6 +395,8 @@ def operar_heap(limite):
         print(f"Error operando el Heap: {e}")
 
 def ordenar_heap_sort(limite): 
+    # Ordena In-Place mediante Transformar y Conquistar: convierte el arreglo en un Max-Heap y extrae el máximo repetidamente.
+    # Garantiza una complejidad de O(n log n), logrando ordenar 10 millones de datos masivos en menos de un minuto sin colapsar la RAM.
     if not archivo_existe(ARCHIVO_DATOS): return
         
     inicio = time.time()
