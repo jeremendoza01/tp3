@@ -77,14 +77,6 @@ flowchart LR
 
 **Para iniciar el programa con su interfaz gráfica, solo necesitás tener **Python 3.x** instalado. El script utiliza únicamente la biblioteca estándar, por lo que no requiere instalaciones adicionales (sin dependencias externas).**
 1. Cloná el repositorio en tu PC:
-   ```bash
-   git clone [https://github.com/jeremendoza01/tp3.git](https://github.com/jeremendoza01/tp3.git)
-
-**Ejecutá el archivo principal:**
-```bash
-   python tp3_gui.py
-```
-**Opción B: código fuente (solo biblioteca estándar)**
 
 ```bash
    git clone https://github.com/jeremendoza01/tp3.git
