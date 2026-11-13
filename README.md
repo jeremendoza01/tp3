@@ -75,11 +75,15 @@ flowchart LR
 
 ## 🚀 Cómo ejecutarlo
 
-**Opción A: ejecutable (Windows x64, sin instalar Python)**
-Descargá `tp3.exe` (Releases o carpeta `ejecutable/`) y abrilo con doble clic o desde `cmd`/PowerShell. Crea los archivos en su misma carpeta.
+**Para iniciar el programa con su interfaz gráfica, solo necesitás tener **Python 3.x** instalado. El script utiliza únicamente la biblioteca estándar, por lo que no requiere instalaciones adicionales (sin dependencias externas).**
+1. Cloná el repositorio en tu PC:
+   ```bash
+   git clone [https://github.com/jeremendoza01/tp3.git](https://github.com/jeremendoza01/tp3.git)
 
-> ⚠️ El `.exe` no está firmado digitalmente: Windows SmartScreen o el antivirus pueden advertirlo. El código completo está en `tp3.py`.
-
+**Ejecutá el archivo principal:**
+```bash
+   python tp3_gui.py
+```
 **Opción B: código fuente (solo biblioteca estándar)**
 
 ```bash
@@ -95,7 +99,7 @@ Descargá `tp3.exe` (Releases o carpeta `ejecutable/`) y abrilo con doble clic o
 ```text
 📦 tp3-analisis-y-diseno-de-algoritmos
  ┣ 📜 tp3.py                       # Código fuente
- ┣ 📁 ejecutable  ┗ ⚙️ tp3.exe     # Windows x64
+ ┣ 📁 ejecutable  ┗ ⚙️ tp3_gui.py     # Python
  ┣ 📁 informe     ┗ 📄 Informe-Tp3-Mendoza-Jeremias.pdf
  ┗ 📘 README.md
 ```
