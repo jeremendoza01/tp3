@@ -81,7 +81,7 @@ flowchart LR
 ```bash
    git clone https://github.com/jeremendoza01/tp3.git
    cd tp3
-   python tp3.py
+   python tp3_gui.py
 ```
 
 **💾 Recursos:** ≈ 1 GB de disco para `Datos.txt` (y otro para `Datos_CountingSort.txt`), ≈ 1 GB de RAM para Counting Sort y ≈ 0,5 GB para Heap/Heap Sort con 10 M de datos.
