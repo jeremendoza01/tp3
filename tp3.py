@@ -17,7 +17,7 @@ RANGO_MAX = 100000000        # Rango de valores (k)
 # ==========================================
 
 class NodoAVL:
-    """Nodo para el Árbol AVL que almacena valor, altura y punteros."""
+    # Nodo para el Árbol AVL que almacena valor, altura y punteros.
     def __init__(self, valor):
         self.valor = valor
         self.izquierdo = None
@@ -179,9 +179,8 @@ class MaxHeap:
             if val == valor: return i
         return -1
 
-# ==========================================
-# FUNCIONES AUXILIARES
-# ==========================================
+# FUNCION AUXILIAR
+
 def archivo_existe(nombre_archivo):
     #Verifica si el archivo existe antes de operar sobre él.
     if not os.path.exists(nombre_archivo):
@@ -193,8 +192,6 @@ def archivo_existe(nombre_archivo):
 # ==========================================
 # FUNCIONES DE LAS CONSIGNAS (a - k)
 # ==========================================
-
-
 def generar_archivo_datos():
     #Genera un archivo de texto con 100 millones de números aleatorios entre 0 y 100 millones.
     #En vez de crear los 100 millones de números en la memoria de golpe, los genera y escribe en el disco duro por bloques de a un millón. Complejidad espacial O(1).
@@ -241,11 +238,10 @@ def buscar_max_min_y_frecuencia():
     except Exception as e:
         print(f"Error durante el análisis: {e}")
 
-
 def ordenar_counting_sort():
-    #Ordena los datos usando Counting Sort, es eficiente para rangos limitados de valores.#
-    #Es una técnica de ordenamiento que cuenta la frecuencia de cada número y luego reconstruye el arreglo ordenado. Complejidad temporal O(n + k).#
-    #Consigna d)#
+    # Algoritmo no comparativo ultra rápido O(n+k) que cuenta la frecuencia de cada número en lugar de compararlos.
+    # Ideal para enteros masivos porque vence la barrera de O(n log n), aunque consume memoria proporcional al valor máximo.
+    #Consigna d)
     if not archivo_existe(ARCHIVO_DATOS): return
         
     inicio = time.time()
@@ -350,8 +346,8 @@ def operar_arbol_avl(limite):
         print(f"Error operando el AVL: {e}")
 
 def operar_heap(limite):
-    # Usa Transformar y Conquistar: primero convierte la lista en un Max-Heap y luego extrae el máximo repetidamente.
-    # Garantiza una complejidad eficiente de O(n log n), ideal para ordenar millones de datos sin saturar la RAM.
+    # Opera el Max-Heap interactivamente: permite buscar e insertar datos O(log n), y extraer el máximo absoluto en tiempo constante O(1).
+    # Utiliza un arreglo plano sin punteros, demostrando que es ideal para gestionar prioridades ahorrando memoria, pero ineficiente para búsquedas O(n).
     #Consigna j) Max Heap.
     if not archivo_existe(ARCHIVO_DATOS): return
         
@@ -395,8 +391,8 @@ def operar_heap(limite):
         print(f"Error operando el Heap: {e}")
 
 def ordenar_heap_sort(limite): 
-    # Ordena In-Place mediante Transformar y Conquistar: convierte el arreglo en un Max-Heap y extrae el máximo repetidamente.
-    # Garantiza una complejidad de O(n log n), logrando ordenar 10 millones de datos masivos en menos de un minuto sin colapsar la RAM.
+    # Fase 1: Usa 'Heapify' para convertir el arreglo en un Max-Heap O(n).
+    # Fase 2: Extrae la raíz repetidamente (el máximo) y la mueve al final, ordenando In-Place en O(n log n).
     if not archivo_existe(ARCHIVO_DATOS): return
         
     inicio = time.time()
@@ -438,7 +434,9 @@ def ordenar_heap_sort(limite):
         print(f"Error en Heap Sort: {e}")
     
 def verificar_orden(archivo_nombre):
-    """Consigna f y k) Verificación lineal O(n)."""
+    # Valida el ordenamiento mediante un recorrido secuencial O(n), comparando cada número con su predecesor.
+    # Es altamente eficiente porque interrumpe la lectura al instante si detecta un error, ahorrando tiempo.
+    #Consigna f y k) Verificación lineal O(n).
     if not archivo_existe(archivo_nombre): return
         
     inicio = time.time()
@@ -459,6 +457,8 @@ def verificar_orden(archivo_nombre):
         print(f"Error verificando '{archivo_nombre}': {e}")
 
 def mostrar_menu():
+    # Muestra un menú de consola que permite al usuario interactuar y ejecutar todos los algoritmos del TP3.
+    # Funciona como un orquestador para gestionar la secuencia del trabajo práctico.
     while True:
         print("\n" + "="*60)
         print(" TP3 - TRANSFORMACIÓN, ESTRUCTURAS AVANZADAS Y CONQUISTA")
