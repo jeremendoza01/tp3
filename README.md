@@ -77,39 +77,38 @@ flowchart LR
 
 ## 🚀 Cómo ejecutarlo
 
-<<<<<<< HEAD
-El proyecto usa **únicamente la biblioteca estándar de Python 3.x** (sin dependencias externas) e incluye versión de consola, versión gráfica (`tkinter`) y pruebas unitarias (`unittest`).
+El proyecto incluye **tres modos de ejecución** (Aplicación Web interactiva lista para Vercel, Interfaz Gráfica de Escritorio en Tkinter y Consola en Python), sin dependencias externas:
 
 ```bash
 git clone https://github.com/jeremendoza01/tp3.git
 cd tp3
 
-# Opción A: Interfaz gráfica (GUI en Tkinter)
+# Opción A: Aplicación Web interactiva (abrir index.html o desplegar en Vercel)
+start index.html
+
+# Opción B: Interfaz gráfica de escritorio (GUI en Tkinter)
 python ejecutable/tp3_gui.py
 
-# Opción B: Consola interactiva
+# Opción C: Consola interactiva
 python tp3.py
 
 # Pruebas unitarias automatizadas (AVL, Max/Min Heap, ordenamientos y verificación)
 python -m unittest discover -s tests -v
-=======
-**Para iniciar el programa con su interfaz gráfica, solo necesitás tener **Python 3.x** instalado. El script utiliza únicamente la biblioteca estándar, por lo que no requiere instalaciones adicionales (sin dependencias externas).**
-1. Cloná el repositorio en tu PC:
-
-```bash
-   git clone https://github.com/jeremendoza01/tp3.git
-   cd tp3
-   python tp3_gui.py
->>>>>>> b5d00303b85f6dbd0c1e64ab805e35a91ebe1ebe
 ```
+
+> 🌐 **Despliegue en Vercel / GitHub Pages:** El repositorio incluye `index.html`, `web/` y `vercel.json` en la raíz. Basta con importar el repositorio en [Vercel](https://vercel.com/new) y presionar **Deploy** sin configurar nada.
 
 **💾 Recursos:** ≈ 1 GB de disco para `Datos.txt` (y otro para `Datos_CountingSort.txt`), ≈ 400 MB de RAM para Counting Sort y análisis de frecuencias (gracias a `array('I')`), y ≈ 0,5 GB para Heap/Heap Sort con 10 M de datos.
 
 ## 📂 Estructura del repositorio
 
 ```text
-<<<<<<< HEAD
 📦 tp3
+ ┣ 🌐 index.html                             # Laboratorio Web interactivo (raíz para Vercel)
+ ┣ ⚙️ vercel.json                            # Configuración de despliegue estático en Vercel
+ ┣ 📁 web
+ ┃  ┣ 🎨 styles.css                          # Estilos de la aplicación web
+ ┃  ┗ ⚡ app.js                              # Algoritmos y estructuras en vivo (TypedArrays + SVG)
  ┣ 📜 tp3.py                                 # Programa principal (consola interactiva)
  ┣ 📁 ejecutable
  ┃  ┗ 🖥️ tp3_gui.py                          # Interfaz gráfica completa (Tkinter)
@@ -117,12 +116,6 @@ python -m unittest discover -s tests -v
  ┃  ┗ 🧪 test_tp3.py                         # Pruebas unitarias (unittest)
  ┣ 📁 informe
  ┃  ┗ 📄 Informe-Tp3-Mendoza-Jeremias.pdf    # Informe técnico y capturas
-=======
-📦 tp3-analisis-y-diseno-de-algoritmos
- ┣ 📜 tp3.py                       # Código fuente
- ┣ 📁 ejecutable  ┗ ⚙️ tp3_gui.py     # Python
- ┣ 📁 informe     ┗ 📄 Informe-Tp3-Mendoza-Jeremias.pdf
->>>>>>> b5d00303b85f6dbd0c1e64ab805e35a91ebe1ebe
  ┗ 📘 README.md
 ```
 

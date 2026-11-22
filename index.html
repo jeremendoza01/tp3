@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TP N.º 3 · Análisis y Diseño de Algoritmos · UNViMe 2026</title>
+  <meta name="description" content="Laboratorio interactivo web del TP N.º 3: Transformar y Conquistar — Counting Sort, Selection Sort, Heap Sort, Árbol AVL y Heap Binario (Max/Min)." />
+  <link rel="stylesheet" href="web/styles.css" />
+</head>
+<body>
+  <!-- ENCABEZADO SUPERIOR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="logo-badge">⚙️ TP N.º 3</span>
+      <div>
+        <h1>Análisis y Diseño de Algoritmos <span class="muted">· Transformar y Conquistar</span></h1>
+        <p class="submeta">UNViMe 2026 · Alumno: <strong>Jeremías Mendoza</strong> · Prof.: <strong>Reinaldo Gómez</strong></p>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span id="status-chip" class="chip chip-warn">● Datos.txt no generado en memoria</span>
+      <a class="btn btn-outline" href="informe/Informe-Tp3-Mendoza-Jeremias.pdf" target="_blank" rel="noopener">📄 Informe PDF</a>
+      <a class="btn btn-outline" href="https://github.com/jeremendoza01/tp3" target="_blank" rel="noopener">💻 GitHub</a>
+    </div>
+  </header>
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <div class="layout">
+    <!-- MENÚ LATERAL -->
+    <aside class="sidebar">
+      <div class="sidebar-title">MENÚ INTERACTIVO</div>
+      <nav id="nav-menu">
+        <button class="nav-item active" data-panel="inicio">🏠 <span>Inicio y Resumen</span></button>
+        <button class="nav-item" data-panel="generar">🎲 <span>1 · Generar Datos <small>a)</small></span></button>
+        <button class="nav-item" data-panel="analizar">🔎 <span>2 · Máx, Mín y Frec. <small>b, c)</small></span></button>
+        <button class="nav-item" data-panel="counting">🟢 <span>3 · Counting Sort <small>d)</small></span></button>
+        <button class="nav-item" data-panel="selection">🔴 <span>4 · Selection Sort <small>e)</small></span></button>
+        <button class="nav-item" data-panel="avl">🌳 <span>5 · Árbol AVL <small>i)</small></span></button>
+        <button class="nav-item" data-panel="heap">⛰️ <span>6 · Heap (Max / Min) <small>j)</small></span></button>
+        <button class="nav-item" data-panel="heapsort">🔵 <span>7 · Heap Sort <small>k)</small></span></button>
+        <button class="nav-item" data-panel="verificar">✅ <span>8 · Verificar Orden <small>f)</small></span></button>
+        <button class="nav-item" data-panel="comparativa">📊 <span>9 · Comparativa <small>g, l)</small></span></button>
+      </nav>
+      <div class="sidebar-footer">
+        <div><strong>Jeremías Mendoza</strong></div>
+        <div class="muted">Ingeniería en Sistemas</div>
+        <div class="muted">UNViMe · 2026</div>
+      </div>
+    </aside>
+
+    <!-- ÁREA DE PANELES -->
+    <main class="main-area">
+      <!-- PANEL 0: INICIO -->
+      <section id="panel-inicio" class="panel active">
+        <div class="panel-header">
+          <h2>🏠 Bienvenido al Laboratorio Web del TP N.º 3</h2>
+          <p>Ejecutá en vivo desde el navegador todas las consignas (<strong>a</strong> hasta <strong>l</strong>) sobre arreglos tipados de alto rendimiento, o explorá las mediciones reales sobre los <strong>100.000.000 de datos</strong>.</p>
+        </div>
+
+        <div class="cards-grid cols-4">
+          <div class="card border-green">
+            <div class="card-value" id="home-datos-estado">Sin generar</div>
+            <div class="card-label">Estado de Datos.txt (Web)</div>
+          </div>
+          <div class="card border-blue">
+            <div class="card-value">a) a l)</div>
+            <div class="card-label">Consignas implementadas</div>
+          </div>
+          <div class="card border-yellow">
+            <div class="card-value">71,03 s</div>
+            <div class="card-label">Counting Sort (100 M real)</div>
+          </div>
+          <div class="card border-purple">
+            <div class="card-value">≈ 19.400×</div>
+            <div class="card-label">Ventaja AVL vs Heap (búsqueda)</div>
+          </div>
+        </div>
+
+        <div class="box">
+          <h3>🚀 Flujo recomendado de prueba en vivo</h3>
+          <div class="steps-grid">
+            <div class="step-item" data-goto="generar">
+              <span class="step-num">1</span>
+              <div>
+                <strong>Generar Datos.txt (Consigna a)</strong>
+                <p>Creá desde 100.000 hasta 100.000.000 de enteros aleatorios en memoria del navegador y descargá el archivo.</p>
+              </div>
+            </div>
+            <div class="step-item" data-goto="analizar">
+              <span class="step-num">2</span>
+              <div>
+                <strong>Máximo, Mínimo y Frecuencias (b, c)</strong>
+                <p>Recorrido único O(n) con validación estadística mediante distribución de Poisson.</p>
+              </div>
+            </div>
+            <div class="step-item" data-goto="counting">
+              <span class="step-num">3</span>
+              <div>
+                <strong>Ordenamientos: Counting, Selection y Heap Sort (d, e, k)</strong>
+                <p>Compará empíricamente O(n + k) vs O(n²) vs O(n log n) y verificá el orden ascendente.</p>
+              </div>
+            </div>
+            <div class="step-item" data-goto="avl">
+              <span class="step-num">4</span>
+              <div>
+                <strong>Árbol AVL y Heap Binario Max/Min (i, j)</strong>
+                <p>Insertá, buscá y eliminá nodos en tiempo real con visualización gráfica e invariantes verificados.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="box">
+          <div class="flex-between">
+            <h3>📌 Resumen de mediciones reales (100.000.000 de datos en Python · Ryzen 5 5600GT)</h3>
+            <button class="btn btn-sm btn-blue" id="btn-cargar-benchmark-home">Cargar en el gráfico comparativo</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Prueba / Algoritmo</th>
+                  <th>n evaluado</th>
+                  <th>PC Escritorio (Ryzen 5)</th>
+                  <th>Notebook (Core i3)</th>
+                  <th>Complejidad</th>
+                  <th>Proyección a 100 M</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>🎲 Generación de Datos.txt</td><td>100.000.000</td><td>36,77 s</td><td>55,00 s</td><td><span class="badge badge-blue">O(n)</span></td><td>36,8 s (medido)</td></tr>
+                <tr><td>🔎 Máx, mín y top 10 frecuencias</td><td>100.000.000</td><td>67,84 s</td><td>96,70 s</td><td><span class="badge badge-blue">O(n)</span></td><td>67,8 s (medido)</td></tr>
+                <tr><td>🟢 Counting Sort</td><td>100.000.000</td><td><strong>71,03 s</strong></td><td>97,42 s</td><td><span class="badge badge-green">O(n + k)</span></td><td><strong>71,0 s (medido)</strong></td></tr>
+                <tr><td>🔴 Selection Sort</td><td>100.000</td><td>157,25 s</td><td>≈ 195 s</td><td><span class="badge badge-red">O(n²)</span></td><td><strong>≈ 5 años</strong></td></tr>
+                <tr><td>🔵 Heap Sort</td><td>10.000.000</td><td>58,36 s (1 M: 5,17 s)</td><td>98,16 s</td><td><span class="badge badge-purple">O(n log n)</span></td><td>≈ 11 min (teórica)</td></tr>
+                <tr><td>🌳 Árbol AVL (construcción / búsqueda)</td><td>1.000.000</td><td>9,84 s / <strong>22 µs</strong></td><td>11,94 s</td><td><span class="badge badge-green">O(log n)</span></td><td>Altura 24 (≤ 28)</td></tr>
+                <tr><td>⛰️ Heap Binario (construcción / búsqueda)</td><td>10.000.000</td><td>7,70 s / <strong>0,427 s</strong></td><td>11,06 s</td><td><span class="badge badge-yellow">Raíz O(1) · Búsq. O(n)</span></td><td>Altura 23 aristas</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- PANEL 1: GENERAR DATOS -->
+      <section id="panel-generar" class="panel">
+        <div class="panel-header">
+          <h2>🎲 a) Generación del archivo de datos (Datos.txt)</h2>
+          <p>Genera <code>n</code> enteros pseudoaleatorios uniformes en el rango <code>[0, RANGO_MAX]</code> dentro de un arreglo tipado <code>Int32Array</code> en memoria. Complejidad temporal <strong>O(n)</strong>.</p>
+        </div>
+
+        <div class="controls-bar">
+          <div class="field">
+            <label for="gen-n">Cantidad de números (n)</label>
+            <select id="gen-preset">
+              <option value="100000">100.000 (Instantáneo)</option>
+              <option value="1000000" selected>1.000.000 (Recomendado Web · ~4 MB)</option>
+              <option value="5000000">5.000.000 (Alto volumen · ~20 MB)</option>
+              <option value="10000000">10.000.000 (Masivo · ~40 MB)</option>
+              <option value="100000000">100.000.000 (Escala completa TP3 · ~400 MB RAM)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="gen-rango">Rango máximo (k)</label>
+            <select id="gen-rango">
+              <option value="1000000">1.000.000 (k = n para 1 M)</option>
+              <option value="10000000">10.000.000</option>
+              <option value="100000000" selected>100.000.000 (Consigna a oficial)</option>
+            </select>
+          </div>
+          <button class="btn btn-blue" id="btn-generar">▶ Generar Datos.txt</button>
+          <button class="btn btn-outline" id="btn-descargar-datos" disabled>⬇ Descargar muestra Datos.txt</button>
+        </div>
+
+        <div class="cards-grid cols-4">
+          <div class="card border-blue"><div class="card-value" id="gen-t">—</div><div class="card-label">Tiempo de ejecución</div></div>
+          <div class="card border-green"><div class="card-value" id="gen-count">—</div><div class="card-label">Números generados</div></div>
+          <div class="card border-yellow"><div class="card-value" id="gen-mem">—</div><div class="card-label">Tamaño RAM / Disco est.</div></div>
+          <div class="card border-purple"><div class="card-value" id="gen-speed">—</div><div class="card-label">Velocidad</div></div>
+        </div>
+
+        <div class="box">
+          <h3>Vista previa de <code>Datos.txt</code> (primeros 30 valores)</h3>
+          <pre id="gen-preview" class="code-preview">Todavía no se generaron datos. Presioná "▶ Generar Datos.txt".</pre>
+        </div>
+      </section>
+
+      <!-- PANEL 2: MÁX, MÍN Y FRECUENCIAS -->
+      <section id="panel-analizar" class="panel">
+        <div class="panel-header">
+          <h2>🔎 b, c) Búsqueda de máximo, mínimo y análisis de frecuencia</h2>
+          <p>Recorre el conjunto de datos en <strong>una sola pasada O(n)</strong> determinando el valor mayor, el menor y los 10 números que más se repiten.</p>
+        </div>
+
+        <div class="controls-bar">
+          <button class="btn btn-blue" id="btn-analizar">▶ Analizar Datos.txt</button>
+        </div>
+
+        <div class="cards-grid cols-4">
+          <div class="card border-green"><div class="card-value" id="ana-max">—</div><div class="card-label">Número Mayor</div></div>
+          <div class="card border-red"><div class="card-value" id="ana-min">—</div><div class="card-label">Número Menor</div></div>
+          <div class="card border-blue"><div class="card-value" id="ana-t">—</div><div class="card-label">Tiempo del recorrido</div></div>
+          <div class="card border-yellow"><div class="card-value" id="ana-dist">—</div><div class="card-label">Valores distintos</div></div>
+        </div>
+
+        <div class="grid-2">
+          <div class="box">
+            <h3>🏆 Los 10 números que más se repiten (Consigna c)</h3>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Posición</th><th>Número</th><th>Apariciones</th></tr></thead>
+                <tbody id="ana-tbody">
+                  <tr><td colspan="3" class="muted">Ejecutá el análisis para ver las frecuencias.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="box">
+            <h3>📐 Validación estadística (Distribución de Poisson)</h3>
+            <p class="muted" id="ana-poisson-desc">Cuando se generan <code>n</code> valores uniformes sobre <code>k</code> posibilidades, la cantidad de apariciones de cada valor sigue una ley de Poisson con media <code>λ = n / k</code>.</p>
+            <div id="ana-poisson-box" class="metric-list">
+              <div class="metric-row"><span>Media teórica (λ = n / k)</span><strong id="poi-lambda">—</strong></div>
+              <div class="metric-row"><span>Fracción teórica de valores presentes (1 − e⁻ᵞ)</span><strong id="poi-teorico">—</strong></div>
+              <div class="metric-row"><span>Valores distintos observados</span><strong id="poi-obs">—</strong></div>
+              <div class="metric-row"><span>Frecuencia máxima observada</span><strong id="poi-maxf">—</strong></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PANEL 3: COUNTING SORT -->
+      <section id="panel-counting" class="panel">
+        <div class="panel-header">
+          <h2>🟢 d) Ordenamiento mediante Counting Sort</h2>
+          <p>Algoritmo no comparativo que cuenta la frecuencia de cada entero en un arreglo auxiliar de tamaño <code>k + 1</code> y reconstruye el arreglo ordenado en tiempo lineal <strong>O(n + k)</strong>.</p>
+        </div>
+
+        <div class="controls-bar">
+          <button class="btn btn-green" id="btn-counting">▶ Ordenar con Counting Sort</button>
+          <button class="btn btn-outline" id="btn-dl-counting" disabled>⬇ Descargar Datos_CountingSort.txt</button>
+        </div>
+
+        <div class="cards-grid cols-4">
+          <div class="card border-blue"><div class="card-value" id="cs-t">—</div><div class="card-label">Tiempo total</div></div>
+          <div class="card border-green"><div class="card-value" id="cs-n">—</div><div class="card-label">Elementos ordenados</div></div>
+          <div class="card border-yellow"><div class="card-value" id="cs-mem">—</div><div class="card-label">Memoria arreglo conteo O(k)</div></div>
+          <div class="card border-purple"><div class="card-value" id="cs-us">—</div><div class="card-label">Tiempo por elemento</div></div>
+        </div>
+
+        <div class="box">
+          <h3>Muestra del resultado (<code>Datos_CountingSort.txt</code>)</h3>
+          <pre id="cs-preview" class="code-preview">Ejecutá Counting Sort para ver los primeros y últimos elementos ordenados.</pre>
+        </div>
+      </section>
+
+      <!-- PANEL 4: SELECTION SORT -->
+      <section id="panel-selection" class="panel">
+        <div class="panel-header">
+          <h2>🔴 e) Ordenamiento mediante Selection Sort</h2>
+          <p>Busca exhaustivamente el mínimo del subarreglo restante en cada paso. Realiza <code>n(n − 1)/2</code> comparaciones: <strong>O(n²)</strong> tanto en el mejor como en el peor caso.</p>
+        </div>
+
+        <div class="controls-bar">
+          <div class="field">
+            <label for="sel-n">Tamaño de la muestra (n)</label>
+            <select id="sel-n">
+              <option value="10000">10.000 elementos (~0,05 s)</option>
+              <option value="25000" selected>25.000 elementos (~0,3 s)</option>
+              <option value="50000">50.000 elementos (~1,2 s)</option>
+              <option value="100000">100.000 elementos (~4,5 s en JS / ~157 s en Python)</option>
+            </select>
+          </div>
+          <button class="btn btn-red" id="btn-selection">▶ Ordenar con Selection Sort</button>
+          <button class="btn btn-outline" id="btn-dl-selection" disabled>⬇ Descargar Datos_SelectionSort.txt</button>
+        </div>
+
+        <div class="cards-grid cols-4">
+          <div class="card border-blue"><div class="card-value" id="sel-t">—</div><div class="card-label">Tiempo medido</div></div>
+          <div class="card border-yellow"><div class="card-value" id="sel-cmp">—</div><div class="card-label">Comparaciones n(n−1)/2</div></div>
+          <div class="card border-purple"><div class="card-value" id="sel-ns">—</div><div class="card-label">Tiempo por comparación</div></div>
+          <div class="card border-red"><div class="card-value" id="sel-proy">—</div><div class="card-label">Proyección a 100.000.000</div></div>
+        </div>
+
+        <div class="box">
+          <h3>Muestra del resultado (<code>Datos_SelectionSort.txt</code>)</h3>
+          <pre id="sel-preview" class="code-preview">Ejecutá Selection Sort para ver el resultado y la extrapolación cuadrática a 100 millones.</pre>
+        </div>
+      </section>
+
+      <!-- PANEL 5: ÁRBOL AVL -->
+      <section id="panel-avl" class="panel">
+        <div class="panel-header">
+          <h2>🌳 i) Implementación de Árbol AVL</h2>
+          <p>Árbol binario de búsqueda autobalanceado (<code>factor_balance ∈ {-1, 0, 1}</code>). Garantiza inserción, búsqueda y eliminación de cualquier valor en <strong>O(log n)</strong>.</p>
+        </div>
+
+        <div class="controls-bar">
+          <div class="field">
+            <label for="avl-n">Datos a insertar desde Datos.txt</label>
+            <select id="avl-n">
+              <option value="15">15 nodos (Ideal para ver rotaciones en el gráfico)</option>
+              <option value="10000">10.000 nodos</option>
+              <option value="100000" selected>100.000 nodos (Rápido)</option>
+              <option value="500000">500.000 nodos</option>
+              <option value="1000000">1.000.000 nodos (Muestra del informe)</option>
+            </select>
+          </div>
+          <button class="btn btn-blue" id="btn-avl-build">▶ Construir Árbol AVL</button>
+        </div>
+
+        <div class="cards-grid cols-4">
+          <div class="card border-green"><div class="card-value" id="avl-altura">—</div><div class="card-label">Altura del árbol</div></div>
+          <div class="card border-blue"><div class="card-value" id="avl-nodos">—</div><div class="card-label">Cantidad total de nodos</div></div>
+          <div class="card border-yellow"><div class="card-value" id="avl-t">—</div><div class="card-label">Tiempo de construcción</div></div>
+          <div class="card border-purple"><div class="card-value" id="avl-cota">—</div><div class="card-label">Cota teórica 1,44·log₂(n+2)</div></div>
+        </div>
+
+        <div class="box">
+          <div class="inorden-bar">
+            <strong>Recorrido InOrden (primeros 15 elementos):</strong>
+            <code id="avl-inorden">—</code>
+          </div>
+          <div class="ops-bar">
+            <input type="number" id="avl-input" placeholder="Ingrese un valor entero…" min="0" />
+            <button class="btn btn-green btn-sm" id="btn-avl-ins" disabled>➕ Insertar O(log n)</button>
+            <button class="btn btn-blue btn-sm" id="btn-avl-bus" disabled>🔍 Buscar O(log n)</button>
+            <button class="btn btn-red btn-sm" id="btn-avl-eli" disabled>🗑 Eliminar O(log n)</button>
+            <button class="btn btn-purple btn-sm" id="btn-avl-ver" disabled>✔ Verificar invariante AVL</button>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="box">
+            <h3>Vista gráfica de los niveles superiores del AVL (valor · h · bf)</h3>
+            <div class="tree-canvas-wrap">
+              <svg id="avl-svg" viewBox="0 0 640 240"></svg>
+            </div>
+          </div>
+          <div class="box">
+            <h3>Registro de operaciones sobre el AVL</h3>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Operación</th><th>Valor</th><th>Resultado</th><th>Tiempo</th></tr></thead>
+                <tbody id="avl-ops-tbody">
+                  <tr><td colspan="4" class="muted">Construí el árbol para habilitar las operaciones.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PANEL 6: HEAP BINARIO (MAX / MIN) -->
+      <section id="panel-heap" class="panel">
+        <div class="panel-header">
+          <h2>⛰️ j) Implementación de Heap Binario (Max Heap y Min Heap)</h2>
+          <p>Árbol binario completo sobre un arreglo contiguo sin punteros. Acceso a la raíz en <strong>O(1)</strong>, inserción y extracción de raíz en <strong>O(log n)</strong>, búsqueda arbitraria en <strong>O(n)</strong>.</p>
+        </div>
+
+        <div class="controls-bar">
+          <div class="field">
+            <label for="heap-tipo">Tipo de Montículo (Consigna j)</label>
+            <select id="heap-tipo">
+              <option value="max" selected>Max Heap (raíz = máximo · eliminar máximo)</option>
+              <option value="min">Min Heap (raíz = mínimo · eliminar mínimo)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="heap-n">Cantidad de elementos</label>
+            <select id="heap-n">
+              <option value="15">15 elementos (Ideal para visualización)</option>
+              <option value="100000">100.000 elementos</option>
+              <option value="1000000" selected>1.000.000 elementos</option>
+              <option value="10000000">10.000.000 elementos (Muestra del informe)</option>
+            </select>
+          </div>
+          <button class="btn btn-purple" id="btn-heap-build">▶ Construir Heap</button>
+        </div>
+
+        <div class="cards-grid cols-4">
+          <div class="card border-blue"><div class="card-value" id="heap-count">—</div><div class="card-label">Cantidad de elementos</div></div>
+          <div class="card border-green"><div class="card-value" id="heap-root">—</div><div class="card-label" id="heap-root-label">Elemento raíz (Máximo)</div></div>
+          <div class="card border-yellow"><div class="card-value" id="heap-height">—</div><div class="card-label">Altura aprox. (aristas / niveles)</div></div>
+          <div class="card border-purple"><div class="card-value" id="heap-t">—</div><div class="card-label">Tiempo de construcción</div></div>
+        </div>
+
+        <div class="box">
+          <div class="ops-bar">
+            <input type="number" id="heap-input" placeholder="Ingrese un valor entero…" min="0" />
+            <button class="btn btn-green btn-sm" id="btn-heap-ins" disabled>➕ Insertar O(log n)</button>
+            <button class="btn btn-blue btn-sm" id="btn-heap-bus" disabled>🔍 Buscar O(n)</button>
+            <button class="btn btn-red btn-sm" id="btn-heap-ext" disabled>⬆ Eliminar Máximo (Raíz)</button>
+            <button class="btn btn-purple btn-sm" id="btn-heap-ver" disabled>✔ Verificar propiedad Heap</button>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="box">
+            <h3>Vista gráfica de los primeros niveles del Heap (índice y valor)</h3>
+            <div class="tree-canvas-wrap">
+              <svg id="heap-svg" viewBox="0 0 640 240"></svg>
+            </div>
+          </div>
+          <div class="box">
+            <h3>Registro de operaciones sobre el Heap</h3>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Operación</th><th>Valor</th><th>Resultado</th><th>Tiempo</th></tr></thead>
+                <tbody id="heap-ops-tbody">
+                  <tr><td colspan="4" class="muted">Construí el Heap para operar interactivamente.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PANEL 7: HEAP SORT -->
+      <section id="panel-heapsort" class="panel">
+        <div class="panel-header">
+          <h2>🔵 k) Ordenamiento mediante Heap Sort</h2>
+          <p>Fase 1: construcción bottom-up del Max Heap (algoritmo de Floyd, <strong>O(n)</strong>). Fase 2: <code>n − 1</code> extracciones de la raíz con <code>heapify</code> iterativo (<strong>O(n log n)</strong> total, espacio auxiliar <strong>O(1)</strong> in-place). Guarda y verifica <code>Datos_HeapSort.txt</code>.</p>
+        </div>
+
+        <div class="controls-bar">
+          <div class="field">
+            <label for="hs-n">Tamaño de la muestra (n)</label>
+            <select id="hs-n">
+              <option value="100000">100.000 elementos</option>
+              <option value="1000000" selected>1.000.000 elementos</option>
+              <option value="5000000">5.000.000 elementos</option>
+              <option value="10000000">10.000.000 elementos (Muestra del informe)</option>
+            </select>
+          </div>
+          <button class="btn btn-blue" id="btn-heapsort">▶ Ordenar con Heap Sort</button>
+          <button class="btn btn-outline" id="btn-dl-heapsort" disabled>⬇ Descargar Datos_HeapSort.txt</button>
+        </div>
+
+        <div class="cards-grid cols-4">
+          <div class="card border-blue"><div class="card-value" id="hs-t">—</div><div class="card-label">Tiempo total (Build + Sort)</div></div>
+          <div class="card border-green"><div class="card-value" id="hs-verif">—</div><div class="card-label">Verificación automática</div></div>
+          <div class="card border-yellow"><div class="card-value" id="hs-us">—</div><div class="card-label">Tiempo por elemento</div></div>
+          <div class="card border-purple"><div class="card-value" id="hs-proy">—</div><div class="card-label">Proyección n log n a 100 M</div></div>
+        </div>
+
+        <div class="box">
+          <h3>Muestra del resultado (<code>Datos_HeapSort.txt</code>)</h3>
+          <pre id="hs-preview" class="code-preview">Ejecutá Heap Sort para ordenar in-place y verificar automáticamente el resultado.</pre>
+        </div>
+      </section>
+
+      <!-- PANEL 8: VERIFICAR ORDENAMIENTO -->
+      <section id="panel-verificar" class="panel">
+        <div class="panel-header">
+          <h2>✅ f) Verificación del ordenamiento ascendente</h2>
+          <p>Comprueba mediante un recorrido secuencial <strong>O(n)</strong> que <code>a[i] ≤ a[i + 1]</code> para toda posición de los resultados generados en las opciones <strong>d)</strong>, <strong>e)</strong> y <strong>k)</strong>.</p>
+        </div>
+
+        <div class="controls-bar">
+          <button class="btn btn-green" id="btn-verificar-todos">▶ Verificar todos los archivos ordenados</button>
+          <button class="btn btn-outline" id="btn-simular-fallo">🧪 Simular archivo desordenado (prueba de detección)</button>
+        </div>
+
+        <div class="box">
+          <h3>Estado de verificación de los archivos de salida</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Archivo</th>
+                  <th>Algoritmo</th>
+                  <th>Elementos verificados</th>
+                  <th>Rango [Mín .. Máx]</th>
+                  <th>Resultado</th>
+                  <th>Tiempo</th>
+                </tr>
+              </thead>
+              <tbody id="ver-tbody">
+                <tr><td colspan="6" class="muted">Presioná "▶ Verificar todos los archivos ordenados" luego de ejecutar algún algoritmo.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- PANEL 9: COMPARATIVA Y CONSIGNA L -->
+      <section id="panel-comparativa" class="panel">
+        <div class="panel-header">
+          <h2>📊 g, l) Comparación de Estructuras y Algoritmos</h2>
+          <p>Gráfico comparativo de los tiempos medidos y análisis teórico/empírico completo exigido por las consignas <strong>g)</strong> y <strong>l)</strong>.</p>
+        </div>
+
+        <div class="controls-bar">
+          <button class="btn btn-blue btn-sm" id="btn-cargar-100m">📥 Cargar mediciones de 100 M del Informe (Python)</button>
+          <button class="btn btn-green btn-sm" id="btn-exportar-csv">💾 Exportar resultados_tp3.csv</button>
+          <button class="btn btn-outline btn-sm" id="btn-limpiar-hist">🧹 Limpiar historial</button>
+          <label class="checkbox-label">
+            <input type="checkbox" id="chk-log-scale" checked />
+            Escala logarítmica
+          </label>
+        </div>
+
+        <div class="box">
+          <h3>Gráfico comparativo de tiempos de ejecución</h3>
+          <div id="chart-container" class="chart-box"></div>
+        </div>
+
+        <div class="grid-2">
+          <div class="box">
+            <h3>1. Comparación de Estructuras: Árbol AVL vs Heap (Consigna l)</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Criterio / Operación</th><th>🌳 Árbol AVL</th><th>⛰️ Heap Binario (Max / Min)</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><strong>Inserción</strong></td><td><code>O(log n)</code> + rotaciones (≈ 9,84 µs)</td><td><code>O(log n)</code> peor; <strong><code>O(1)</code> promedio</strong> (≈ 0,77 µs)</td></tr>
+                  <tr><td><strong>Búsqueda arbitraria</strong></td><td><strong><code>O(log n)</code></strong> (≈ 22 µs en 1 M)</td><td><strong><code>O(n)</code> lineal</strong> (≈ 427.438 µs en 10 M)</td></tr>
+                  <tr><td><strong>Eliminación</strong></td><td><code>O(log n)</code> cualquier valor (≈ 41 µs)</td><td><code>O(log n)</code> solo la raíz (máx/mín, ≈ 51 µs)</td></tr>
+                  <tr><td><strong>Acceso al extremo</strong></td><td><code>O(log n)</code></td><td><strong><code>O(1)</code> inmediato</strong> en <code>heap[0]</code></td></tr>
+                  <tr><td><strong>Uso de memoria</strong></td><td><code>O(n)</code> nodos con punteros (~3× más RAM)</td><td><strong><code>O(n)</code> arreglo contiguo</strong> sin punteros</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="box">
+            <h3>2. Algoritmos de Ordenamiento: Mejor y Peor Caso (Consigna l)</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Algoritmo</th><th>Mejor Caso</th><th>Peor Caso</th><th>Espacio Aux.</th><th>In-Place</th><th>Estable</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><strong>Counting Sort</strong></td><td><code>O(n + k)</code></td><td><code>O(n + k)</code></td><td><code>O(k)</code></td><td>No</td><td>Sí*</td></tr>
+                  <tr><td><strong>Selection Sort</strong></td><td><code>O(n²)</code></td><td><code>O(n²)</code></td><td><code>O(1)</code></td><td>Sí</td><td>No</td></tr>
+                  <tr><td><strong>Heap Sort</strong></td><td><code>O(n log n)</code></td><td><code>O(n log n)</code></td><td><code>O(1)</code></td><td>Sí</td><td>No</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="conclusion-note">
+              <strong>Conclusión para grandes volúmenes (100 M):</strong><br/>
+              • <strong>Counting Sort</strong> es el más rápido para enteros en rango acotado (<code>k ≈ n</code>), ordenando los 100 M en ~71 s a cambio de memoria <code>O(k)</code>.<br/>
+              • <strong>Heap Sort</strong> es el mejor algoritmo de propósito general: garantiza <code>O(n log n)</code> e in-place <code>O(1)</code> sin depender del rango <code>k</code>.<br/>
+              • <strong>Selection Sort</strong> (<code>O(n²)</code>) es inviable a gran escala (≈ 5 años para 100 M).
+            </p>
+          </div>
+        </div>
+
+        <div class="box">
+          <h3>Historial detallado de mediciones</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Operación</th><th>n</th><th>Tiempo medido</th><th>µs / elemento</th><th>Origen / Hora</th></tr></thead>
+              <tbody id="hist-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- CONSOLA INFERIOR DE PROGRESO Y REGISTRO -->
+      <footer class="bottom-console">
+        <div class="progress-row">
+          <span id="status-text">Listo. Seleccioná una opción o generá Datos.txt para comenzar.</span>
+          <span id="status-pct"></span>
+        </div>
+        <div class="progressbar-bg">
+          <div id="progressbar-fill" class="progressbar-fill" style="width: 0%"></div>
+        </div>
+        <div id="console-log" class="console-log"></div>
+      </footer>
+    </main>
+  </div>
+
+  <script src="web/app.js"></script>
+</body>
+</html>
