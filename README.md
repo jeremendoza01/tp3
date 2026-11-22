@@ -77,6 +77,7 @@ flowchart LR
 
 ## 🚀 Cómo ejecutarlo
 
+<<<<<<< HEAD
 El proyecto usa **únicamente la biblioteca estándar de Python 3.x** (sin dependencias externas) e incluye versión de consola, versión gráfica (`tkinter`) y pruebas unitarias (`unittest`).
 
 ```bash
@@ -91,6 +92,15 @@ python tp3.py
 
 # Pruebas unitarias automatizadas (AVL, Max/Min Heap, ordenamientos y verificación)
 python -m unittest discover -s tests -v
+=======
+**Para iniciar el programa con su interfaz gráfica, solo necesitás tener **Python 3.x** instalado. El script utiliza únicamente la biblioteca estándar, por lo que no requiere instalaciones adicionales (sin dependencias externas).**
+1. Cloná el repositorio en tu PC:
+
+```bash
+   git clone https://github.com/jeremendoza01/tp3.git
+   cd tp3
+   python tp3_gui.py
+>>>>>>> b5d00303b85f6dbd0c1e64ab805e35a91ebe1ebe
 ```
 
 **💾 Recursos:** ≈ 1 GB de disco para `Datos.txt` (y otro para `Datos_CountingSort.txt`), ≈ 400 MB de RAM para Counting Sort y análisis de frecuencias (gracias a `array('I')`), y ≈ 0,5 GB para Heap/Heap Sort con 10 M de datos.
@@ -98,6 +108,7 @@ python -m unittest discover -s tests -v
 ## 📂 Estructura del repositorio
 
 ```text
+<<<<<<< HEAD
 📦 tp3
  ┣ 📜 tp3.py                                 # Programa principal (consola interactiva)
  ┣ 📁 ejecutable
@@ -106,6 +117,12 @@ python -m unittest discover -s tests -v
  ┃  ┗ 🧪 test_tp3.py                         # Pruebas unitarias (unittest)
  ┣ 📁 informe
  ┃  ┗ 📄 Informe-Tp3-Mendoza-Jeremias.pdf    # Informe técnico y capturas
+=======
+📦 tp3-analisis-y-diseno-de-algoritmos
+ ┣ 📜 tp3.py                       # Código fuente
+ ┣ 📁 ejecutable  ┗ ⚙️ tp3_gui.py     # Python
+ ┣ 📁 informe     ┗ 📄 Informe-Tp3-Mendoza-Jeremias.pdf
+>>>>>>> b5d00303b85f6dbd0c1e64ab805e35a91ebe1ebe
  ┗ 📘 README.md
 ```
 
