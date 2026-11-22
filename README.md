@@ -30,9 +30,9 @@
 
 Programa en **Python** con **menú interactivo** que genera un archivo de **100.000.000 de números aleatorios** (0 a 100.000.000) y lo usa para implementar, medir y comparar:
 
-- 🔢 **Ordenamiento:** Counting Sort, Selection Sort y Heap Sort.
-- 🌳 **Estructuras:** Árbol **AVL** y **Max Heap** (implementaciones propias).
-- ⏱️ **Tiempos** de cada operación y **verificación** del orden de los archivos generados.
+- 🔢 **Ordenamiento:** Counting Sort, Selection Sort y Heap Sort (con `heapify` iterativo).
+- 🌳 **Estructuras:** Árbol **AVL** (con `__slots__` y verificador de invariante) y **Heap Binario** (**Max Heap** y **Min Heap**, implementaciones propias).
+- ⏱️ **Tiempos** de cada operación (con `time.perf_counter()`, separando I/O y cómputo), **verificación** automática del orden y **comparativa teórica/empírica** exportable a CSV.
 
 El objetivo es contrastar la **teoría (complejidad asintótica)** con los **tiempos reales** medidos en una PC.
 
@@ -41,11 +41,12 @@ El objetivo es contrastar la **teoría (complejidad asintótica)** con los **tie
 ## 🧭 Menú y flujo del programa
 
 ```text
- 1. Generar archivo de datos (100 millones)      6. Operaciones de Max Heap
- 2. Buscar máximo, mínimo y frecuencias          7. Ordenar con Heap Sort
- 3. Ordenar con Counting Sort                    8. Verificar ordenamiento de los archivos
- 4. Ordenar con Selection Sort (100.000 datos)   9. Limpiar consola
- 5. Operaciones de Árbol AVL                    10. Salir
+  1. Generar archivo de datos (100 millones)      7. Ordenar con Heap Sort (y verificar)
+  2. Buscar máximo, mínimo y frecuencias          8. Verificar ordenamiento de los archivos
+  3. Ordenar con Counting Sort                    9. Comparativa de tiempos y análisis teórico
+  4. Ordenar con Selection Sort (100.000 datos)  10. Limpiar consola
+  5. Operaciones de Árbol AVL (submenú)          11. Salir
+  6. Operaciones de Heap (Max Heap / Min Heap)
 ```
 
 ```mermaid
@@ -55,48 +56,56 @@ flowchart LR
     D --> C[3. Counting Sort]
     D --> S[4. Selection Sort]
     D --> T[5. Árbol AVL]
-    D --> H[6. Max Heap]
+    D --> H[6. Max / Min Heap]
     D --> K[7. Heap Sort]
     C -->|Datos_CountingSort.txt| V{8. Verificar orden}
     S -->|Datos_SelectionSort.txt| V
     K -->|Datos_HeapSort.txt| V
     V --> R[ORDENADO]
+    R --> M[9. Comparativa y CSV]
 ```
 
-> 💡 Las opciones **2 a 7** necesitan `Datos.txt`: ejecutá primero la **opción 1**.
+> 💡 Las opciones **2 a 7** necesitan `Datos.txt`: ejecutá primero la **opción 1**. Tanto la consola (`tp3.py`) como la interfaz gráfica (`ejecutable/tp3_gui.py`) comparten los archivos en la raíz del proyecto.
 
 ### ✅ Consignas cubiertas
 
 | a | b, c | d | e | f | g | h | i | j | k | l |
 |:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Op. 1 | Op. 2 | Op. 3 | Op. 4 | Op. 8 | Op. 1 a 7 | Código | Op. 5 | Op. 6 | Op. 7 | Informe |
+| Op. 1 | Op. 2 | Op. 3 | Op. 4 | Op. 8 | Op. 1–9 | Código | Op. 5 | Op. 6 (Max/Min) | Op. 7 | Op. 9 + Informe |
 
 ---
 
 ## 🚀 Cómo ejecutarlo
 
-**Opción A: ejecutable (Windows x64, sin instalar Python)**
-Descargá `tp3.exe` (Releases o carpeta `ejecutable/`) y abrilo con doble clic o desde `cmd`/PowerShell. Crea los archivos en su misma carpeta.
-
-> ⚠️ El `.exe` no está firmado digitalmente: Windows SmartScreen o el antivirus pueden advertirlo. El código completo está en `tp3.py`.
-
-**Opción B: código fuente (solo biblioteca estándar)**
+El proyecto usa **únicamente la biblioteca estándar de Python 3.x** (sin dependencias externas) e incluye versión de consola, versión gráfica (`tkinter`) y pruebas unitarias (`unittest`).
 
 ```bash
-   git clone https://github.com/jeremendoza01/tp3.git
-   cd tp3
-   python tp3.py
+git clone https://github.com/jeremendoza01/tp3.git
+cd tp3
+
+# Opción A: Interfaz gráfica (GUI en Tkinter)
+python ejecutable/tp3_gui.py
+
+# Opción B: Consola interactiva
+python tp3.py
+
+# Pruebas unitarias automatizadas (AVL, Max/Min Heap, ordenamientos y verificación)
+python -m unittest discover -s tests -v
 ```
 
-**💾 Recursos:** ≈ 1 GB de disco para `Datos.txt` (y otro para `Datos_CountingSort.txt`), ≈ 1 GB de RAM para Counting Sort y ≈ 0,5 GB para Heap/Heap Sort con 10 M de datos.
+**💾 Recursos:** ≈ 1 GB de disco para `Datos.txt` (y otro para `Datos_CountingSort.txt`), ≈ 400 MB de RAM para Counting Sort y análisis de frecuencias (gracias a `array('I')`), y ≈ 0,5 GB para Heap/Heap Sort con 10 M de datos.
 
 ## 📂 Estructura del repositorio
 
 ```text
-📦 tp3-analisis-y-diseno-de-algoritmos
- ┣ 📜 tp3.py                       # Código fuente
- ┣ 📁 ejecutable  ┗ ⚙️ tp3.exe     # Windows x64
- ┣ 📁 informe     ┗ 📄 Informe-Tp3-Mendoza-Jeremias.pdf
+📦 tp3
+ ┣ 📜 tp3.py                                 # Programa principal (consola interactiva)
+ ┣ 📁 ejecutable
+ ┃  ┗ 🖥️ tp3_gui.py                          # Interfaz gráfica completa (Tkinter)
+ ┣ 📁 tests
+ ┃  ┗ 🧪 test_tp3.py                         # Pruebas unitarias (unittest)
+ ┣ 📁 informe
+ ┃  ┗ 📄 Informe-Tp3-Mendoza-Jeremias.pdf    # Informe técnico y capturas
  ┗ 📘 README.md
 ```
 
@@ -127,9 +136,9 @@ Descargá `tp3.exe` (Releases o carpeta `ejecutable/`) y abrilo con doble clic o
 
 | Algoritmo | Espacio auxiliar | In-place | Estable |
 |---|:---:|:---:|:---:|
-| Counting Sort | O(k) ≈ 800 MB | ❌ | ✅ |
+| Counting Sort | O(k) ≈ 400 MB (`array('I')`) | ❌ | ✅ |
 | Selection Sort | O(1) | ✅ | ❌ |
-| Heap Sort | O(1) | ✅ | ❌ |
+| Heap Sort | O(1) (`heapify` iterativo) | ✅ | ❌ |
 
 ---
 
@@ -145,7 +154,7 @@ Descargá `tp3.exe` (Releases o carpeta `ejecutable/`) y abrilo con doble clic o
 
 > No hay un único ganador: la elección depende del recurso crítico (tiempo, memoria o tipo de operación). Los resultados coinciden con la teoría.
 
-**⚠️ Limitaciones:** pocas corridas en una sola PC con Windows; Python es interpretado (importan las proporciones, no los segundos absolutos); se implementó Max Heap (el Min Heap es simétrico).
+**⚠️ Limitaciones:** pocas corridas en una sola PC con Windows; Python es interpretado (importan las proporciones, no los segundos absolutos). Tanto **Max Heap** como **Min Heap** se encuentran implementados en el código.
 
 ---
 

@@ -18,7 +18,9 @@ Diseño de la aplicación
   la versión de consola: los 100 M de datos nunca se cargan completos en
   memoria, salvo en las muestras de los algoritmos que lo requieren.
 """
+import array
 import csv
+import heapq
 import math
 import os
 import queue
@@ -32,14 +34,17 @@ from datetime import datetime
 from tkinter import font as tkfont
 from tkinter import messagebox, ttk
 
-# La profundidad de recursión del AVL y del heapify es O(log n) (< 40 niveles).
+# La profundidad de recursión del AVL es O(log n) (< 40 niveles para 10^8 nodos).
 sys.setrecursionlimit(10000)
 
 # ============================================================================
-# CONFIGURACIÓN Y RUTAS (los archivos se crean junto al ejecutable)
+# CONFIGURACIÓN Y RUTAS (comparte Datos.txt con tp3.py en la raíz del proyecto)
 # ============================================================================
-BASE_DIR = (os.path.dirname(sys.executable) if getattr(sys, "frozen", False)
-            else os.path.dirname(os.path.abspath(__file__)))
+if getattr(sys, "frozen", False):
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    _script_dir = os.path.dirname(os.path.abspath(__file__))
+    BASE_DIR = os.path.dirname(_script_dir) if os.path.basename(_script_dir).lower() == "ejecutable" else _script_dir
 
 
 def ruta(nombre):
@@ -131,7 +136,8 @@ def _borrar(ruta_archivo):
 # ESTRUCTURAS DE DATOS (implementaciones propias)
 # ============================================================================
 class NodoAVL:
-    """Nodo del Árbol AVL: valor, altura y punteros a los hijos."""
+    """Nodo del Árbol AVL: __slots__ reduce el consumo de RAM por nodo en más del 50 %."""
+    __slots__ = ("valor", "izquierdo", "derecho", "altura")
 
     def __init__(self, valor):
         self.valor = valor
@@ -240,27 +246,65 @@ class ArbolAVL:
                 resultado.append(raiz.valor)
             self.in_orden(raiz.derecho, resultado, limite)
 
+    def es_valido_avl(self):
+        """Comprueba en O(n) propiedad ABB, factor de balance ∈ {-1, 0, 1}, alturas y total_nodos."""
+        def validar(nodo, cota_min, cota_max):
+            if nodo is None:
+                return True, 0, 0
+            if (cota_min is not None and nodo.valor < cota_min) or (
+                cota_max is not None and nodo.valor > cota_max
+            ):
+                return False, 0, 0
+            ok_i, hi, ci = validar(nodo.izquierdo, cota_min, nodo.valor)
+            if not ok_i:
+                return False, 0, 0
+            ok_d, hd, cd = validar(nodo.derecho, nodo.valor, cota_max)
+            if not ok_d or abs(hi - hd) > 1:
+                return False, 0, 0
+            h = 1 + max(hi, hd)
+            if nodo.altura != h:
+                return False, 0, 0
+            return True, h, 1 + ci + cd
 
-class MaxHeap:
-    """Max Heap en arreglo: padre de i = (i-1)//2, hijos = 2i+1 y 2i+2."""
+        ok, _, contados = validar(self.raiz, None, None)
+        return ok and contados == self.total_nodos
 
-    def __init__(self):
+
+class HeapBinario:
+    """Heap Binario (Max Heap o Min Heap) en arreglo: padre = (i-1)//2, hijos = 2i+1 y 2i+2."""
+
+    def __init__(self, tipo="max"):
+        self.tipo = tipo
+        self.es_max = (tipo == "max")
         self.heap = []
 
     def padre(self, i):
         return (i - 1) // 2
 
     def insertar(self, valor):
-        """Agrega al final y 'sube' el elemento mientras sea mayor que su padre."""
-        self.heap.append(valor)
-        i = len(self.heap) - 1
-        while i != 0 and self.heap[self.padre(i)] < self.heap[i]:
-            p = self.padre(i)
-            self.heap[i], self.heap[p] = self.heap[p], self.heap[i]
-            i = p
+        """Agrega al final y 'sube' (sift-up) el elemento hasta restaurar la prioridad."""
+        arr = self.heap
+        arr.append(valor)
+        i = len(arr) - 1
+        if self.es_max:
+            while i > 0:
+                p = (i - 1) >> 1
+                if arr[i] > arr[p]:
+                    arr[i], arr[p] = arr[p], arr[i]
+                    i = p
+                else:
+                    break
+        else:
+            while i > 0:
+                p = (i - 1) >> 1
+                if arr[i] < arr[p]:
+                    arr[i], arr[p] = arr[p], arr[i]
+                    i = p
+                else:
+                    break
 
-    def extraer_maximo(self):
-        """Quita la raíz, mueve el último a la raíz y lo 'hunde' (heapify_down)."""
+    def extraer_raiz(self):
+        """Quita la raíz (máximo o mínimo), mueve el último a la raíz y aplica heapify_down iterativo."""
         if not self.heap:
             return None
         if len(self.heap) == 1:
@@ -270,16 +314,36 @@ class MaxHeap:
         self.heapify_down(0)
         return raiz
 
+    def extraer_maximo(self):
+        return self.extraer_raiz()
+
+    def extraer_minimo(self):
+        return self.extraer_raiz()
+
     def heapify_down(self, i):
-        n = len(self.heap)
-        izq, der, mayor = 2 * i + 1, 2 * i + 2, i
-        if izq < n and self.heap[izq] > self.heap[mayor]:
-            mayor = izq
-        if der < n and self.heap[der] > self.heap[mayor]:
-            mayor = der
-        if mayor != i:
-            self.heap[i], self.heap[mayor] = self.heap[mayor], self.heap[i]
-            self.heapify_down(mayor)
+        """Sift-down iterativo: O(log n) en tiempo y O(1) en espacio auxiliar."""
+        arr = self.heap
+        n = len(arr)
+        es_max = self.es_max
+        while True:
+            prioritario = i
+            izq = (i << 1) + 1
+            der = izq + 1
+            if es_max:
+                if izq < n and arr[izq] > arr[prioritario]:
+                    prioritario = izq
+                if der < n and arr[der] > arr[prioritario]:
+                    prioritario = der
+            else:
+                if izq < n and arr[izq] < arr[prioritario]:
+                    prioritario = izq
+                if der < n and arr[der] < arr[prioritario]:
+                    prioritario = der
+            if prioritario != i:
+                arr[i], arr[prioritario] = arr[prioritario], arr[i]
+                i = prioritario
+            else:
+                break
 
     def buscar(self, valor):
         """Búsqueda lineal O(n): el heap no tiene orden entre hermanos."""
@@ -290,6 +354,32 @@ class MaxHeap:
 
     def altura_aprox(self):
         return int(math.log2(len(self.heap))) if self.heap else 0
+
+    def altura_niveles(self):
+        return int(math.log2(len(self.heap))) + 1 if self.heap else 0
+
+    def es_valido_heap(self):
+        arr = self.heap
+        n = len(arr)
+        for i in range(n // 2):
+            izq, der = 2 * i + 1, 2 * i + 2
+            if self.es_max:
+                if (izq < n and arr[izq] > arr[i]) or (der < n and arr[der] > arr[i]):
+                    return False
+            else:
+                if (izq < n and arr[izq] < arr[i]) or (der < n and arr[der] < arr[i]):
+                    return False
+        return True
+
+
+class MaxHeap(HeapBinario):
+    def __init__(self):
+        super().__init__(tipo="max")
+
+
+class MinHeap(HeapBinario):
+    def __init__(self):
+        super().__init__(tipo="min")
 
 
 # ============================================================================
@@ -397,34 +487,83 @@ def tarea_generar(ctx, n):
 
 
 def tarea_analizar(ctx):
-    """Consignas b) y c) Máximo, mínimo y top 10 de frecuencias en UN solo recorrido. O(n)."""
+    """Consignas b) y c) Máximo, mínimo y top 10 de frecuencias en UN solo recorrido."""
     ctx.log("Recorriendo Datos.txt: máximo, mínimo y frecuencias…", "titulo")
     inicio = time.perf_counter()
-    maximo, minimo, lineas = -1, RANGO_MAX + 1, 0
-    contador = Counter()                      # tabla hash: número -> apariciones
-    for bloque in trozos(ctx, ARCHIVO_DATOS, texto="Analizando"):
-        for linea in bloque:
-            s = linea.strip()
-            if s:
-                num = int(s)
-                if num > maximo:
-                    maximo = num
-                if num < minimo:
-                    minimo = num
-                contador[num] += 1
-        lineas += len(bloque)
+    maximo, minimo, lineas = None, None, 0
+    usar_arreglo = os.path.getsize(ARCHIVO_DATOS) > 50 * 1024 * 1024
+
+    if usar_arreglo:
+        conteo = array.array("I", [0]) * (RANGO_MAX + 1)
+        fuera_rango = Counter()
+        for bloque in trozos(ctx, ARCHIVO_DATOS, texto="Analizando", desde=0.0, hasta=0.9):
+            for linea in bloque:
+                s = linea.strip()
+                if s:
+                    num = int(s)
+                    lineas += 1
+                    if maximo is None or num > maximo:
+                        maximo = num
+                    if minimo is None or num < minimo:
+                        minimo = num
+                    if 0 <= num <= RANGO_MAX:
+                        conteo[num] += 1
+                    else:
+                        fuera_rango[num] += 1
+        if lineas == 0:
+            raise ValueError("El archivo Datos.txt está vacío.")
+        ctx.progreso(0.92, "Calculando los 10 números más frecuentes…")
+        top_heap = []
+        distintos = len(fuera_rango)
+        for num, frec in fuera_rango.items():
+            if len(top_heap) < 10:
+                heapq.heappush(top_heap, (frec, num))
+            elif frec > top_heap[0][0]:
+                heapq.heapreplace(top_heap, (frec, num))
+        umbral = top_heap[0][0] if len(top_heap) == 10 else 0
+        for num in range(max(0, minimo), min(RANGO_MAX, maximo) + 1):
+            c = conteo[num]
+            if c:
+                distintos += 1
+                if c > umbral:
+                    if len(top_heap) < 10:
+                        heapq.heappush(top_heap, (c, num))
+                        if len(top_heap) == 10:
+                            umbral = top_heap[0][0]
+                    else:
+                        heapq.heapreplace(top_heap, (c, num))
+                        umbral = top_heap[0][0]
+        top10 = sorted(((num, frec) for frec, num in top_heap), key=lambda par: (-par[1], par[0]))
+    else:
+        contador = Counter()
+        for bloque in trozos(ctx, ARCHIVO_DATOS, texto="Analizando"):
+            for linea in bloque:
+                s = linea.strip()
+                if s:
+                    num = int(s)
+                    lineas += 1
+                    if maximo is None or num > maximo:
+                        maximo = num
+                    if minimo is None or num < minimo:
+                        minimo = num
+                    contador[num] += 1
+        if lineas == 0:
+            raise ValueError("El archivo Datos.txt está vacío.")
+        distintos = len(contador)
+        top10 = contador.most_common(10)
+
     t = time.perf_counter() - inicio
     return {"n": lineas, "t": t, "max": maximo, "min": minimo,
-            "top": contador.most_common(10), "distintos": len(contador)}
+            "top": top10, "distintos": distintos}
 
 
 def tarea_counting(ctx):
-    """Consigna d) Counting Sort. Tiempo O(n + k), espacio O(k)."""
-    ctx.log(f"Counting Sort: reservando el arreglo de conteo (k + 1 = {fmt_num(RANGO_MAX + 1)} posiciones)…",
+    """Consigna d) Counting Sort. Tiempo O(n + k), espacio O(k) ≈ 400 MB con array('I')."""
+    ctx.log(f"Counting Sort: reservando arreglo compacto (k + 1 = {fmt_num(RANGO_MAX + 1)} contadores)…",
             "titulo")
     inicio = time.perf_counter()
     ctx.progreso(0.0, "Reservando memoria para el arreglo de conteo…")
-    conteo = [0] * (RANGO_MAX + 1)
+    conteo = array.array("I", [0]) * (RANGO_MAX + 1)
     memoria = sys.getsizeof(conteo)
     lineas = 0
     # Fase 1: contar apariciones (lectura en streaming)
@@ -432,8 +571,12 @@ def tarea_counting(ctx):
         for linea in bloque:
             s = linea.strip()
             if s:
-                conteo[int(s)] += 1
-        lineas += len(bloque)
+                val = int(s)
+                if 0 <= val <= RANGO_MAX:
+                    conteo[val] += 1
+                    lineas += 1
+                else:
+                    raise ValueError(f"Valor fuera de rango [0, {RANGO_MAX}]: {val}")
     # Fase 2: recorrer el arreglo y escribir cada valor tantas veces como fue contado
     paso = 1_000_000
     total = RANGO_MAX + 1
@@ -477,21 +620,26 @@ def tarea_selection(ctx, limite):
 
 
 def tarea_heapsort(ctx, limite):
-    """Consigna k) Heap Sort in-place: construcción bottom-up O(n) + n-1 extracciones O(log n)."""
+    """Consigna k) Heap Sort in-place iterativo: build-heap O(n) + extracciones O(n log n) + verificación."""
     ctx.log(f"Heap Sort sobre {fmt_num(limite)} elementos…", "titulo")
     inicio = time.perf_counter()
     datos = leer_lista(ctx, limite, 0.0, 0.05)
     n = len(datos)
 
     def heapify(arr, tam, i):
-        mayor, izq, der = i, 2 * i + 1, 2 * i + 2
-        if izq < tam and arr[izq] > arr[mayor]:
-            mayor = izq
-        if der < tam and arr[der] > arr[mayor]:
-            mayor = der
-        if mayor != i:
-            arr[i], arr[mayor] = arr[mayor], arr[i]
-            heapify(arr, tam, mayor)
+        while True:
+            mayor = i
+            izq = (i << 1) + 1
+            der = izq + 1
+            if izq < tam and arr[izq] > arr[mayor]:
+                mayor = izq
+            if der < tam and arr[der] > arr[mayor]:
+                mayor = der
+            if mayor != i:
+                arr[i], arr[mayor] = arr[mayor], arr[i]
+                i = mayor
+            else:
+                break
 
     # Fase 1: construir el Max Heap (de la última hoja-padre hacia la raíz)
     for i in range(n // 2 - 1, -1, -1):
@@ -503,13 +651,16 @@ def tarea_heapsort(ctx, limite):
     for i in range(n - 1, 0, -1):
         if i % 100_000 == 0:
             ctx.revisar()
-            ctx.progreso(0.15 + 0.80 * (1 - i / max(n, 1)),
+            ctx.progreso(0.15 + 0.77 * (1 - i / max(n, 1)),
                          f"Extrayendo máximos… quedan {fmt_num(i)}")
         datos[i], datos[0] = datos[0], datos[i]
         heapify(datos, i, 0)
-    escribir_lista(ctx, ARCHIVO_HEAPSORT, datos, 0.95, 1.0)
+    escribir_lista(ctx, ARCHIVO_HEAPSORT, datos, 0.92, 0.98)
     t = time.perf_counter() - inicio
-    return {"n": n, "t": t}
+    # Consigna k) Verificación automática del archivo generado
+    ctx.progreso(0.98, "Verificando Datos_HeapSort.txt…")
+    verificado = all(datos[i] <= datos[i + 1] for i in range(n - 1)) if n > 0 else False
+    return {"n": n, "t": t, "verificado": verificado}
 
 
 def tarea_avl_construir(ctx, limite):
@@ -529,18 +680,19 @@ def tarea_avl_construir(ctx, limite):
             "altura": arbol.obtener_altura(arbol.raiz), "muestra": muestra}
 
 
-def tarea_heap_construir(ctx, limite):
-    """Consigna j) Construye el Max Heap con inserciones sucesivas."""
-    ctx.log(f"Construyendo el Max Heap con {fmt_num(limite)} datos…", "titulo")
-    h = MaxHeap()
+def tarea_heap_construir(ctx, limite, tipo="max"):
+    """Consigna j) Construye un Max Heap o Min Heap con inserciones sucesivas."""
+    etiqueta = "Max Heap" if tipo == "max" else "Min Heap"
+    ctx.log(f"Construyendo el {etiqueta} con {fmt_num(limite)} datos…", "titulo")
+    h = MaxHeap() if tipo == "max" else MinHeap()
     inicio = time.perf_counter()
-    for bloque in trozos(ctx, ARCHIVO_DATOS, limite, "Insertando en el heap"):
+    for bloque in trozos(ctx, ARCHIVO_DATOS, limite, f"Insertando en el {etiqueta}"):
         for linea in bloque:
             s = linea.strip()
             if s:
                 h.insertar(int(s))
     t = time.perf_counter() - inicio
-    return {"estructura": h, "t": t, "n": len(h.heap)}
+    return {"estructura": h, "t": t, "n": len(h.heap), "tipo": tipo}
 
 
 def tarea_heap_buscar(ctx, h, valor):
@@ -560,7 +712,7 @@ def tarea_verificar(ctx, archivos):
             resultados.append((nombre, None, 0.0, 0))
             continue
         inicio = time.perf_counter()
-        previo, ordenado, lineas = -1, True, 0
+        previo, ordenado, lineas = None, True, 0
         for bloque in trozos(ctx, ruta_archivo, texto=f"Verificando {nombre}",
                              desde=idx / k, hasta=(idx + 1) / k):
             for linea in bloque:
@@ -568,13 +720,15 @@ def tarea_verificar(ctx, archivos):
                 if not s:
                     continue
                 actual = int(s)
-                if actual < previo:
+                lineas += 1
+                if previo is not None and actual < previo:
                     ordenado = False
                     break
                 previo = actual
-            lineas += len(bloque)
             if not ordenado:
                 break
+        if lineas == 0:
+            ordenado = False
         resultados.append((nombre, ordenado, time.perf_counter() - inicio, lineas))
     return {"resultados": resultados}
 
@@ -703,15 +857,15 @@ class PanelInicio(Panel):
             ("opciones", "Consignas implementadas", ACENTO),
             ("lenguaje", "Lenguaje", AMARILLO),
         ])
-        self.t["opciones"].set("a) a k)")
+        self.t["opciones"].set("a) a l)")
         self.t["lenguaje"].set("Python 100 %")
         caja = tk.Frame(self.cuerpo, bg=PANEL, highlightthickness=1, highlightbackground=BORDE)
         caja.pack(fill="x", pady=(14, 0))
         pasos = [
             ("1", "Generá Datos.txt", "Opción 1 (≈ 1 GB en disco; con 100 M de datos tarda ≈ 1 minuto)."),
             ("2", "Analizá y ordená", "Opciones 2 a 4 y 7: máximo/mínimo, frecuencias y los tres algoritmos de ordenamiento."),
-            ("3", "Explorá las estructuras", "Opciones 5 y 6: Árbol AVL y Max Heap con operaciones interactivas."),
-            ("4", "Verificá y compará", "Opción 8 verifica el orden; la opción 9 muestra el gráfico comparativo y exporta un CSV."),
+            ("3", "Explorá las estructuras", "Opciones 5 y 6: Árbol AVL y Heap Binario (Max Heap y Min Heap) con operaciones interactivas."),
+            ("4", "Verificá y compará", "Opción 8 verifica el orden; la opción 9 muestra gráfico, análisis teórico (consigna l) y exporta CSV."),
         ]
         for num, titulo, desc in pasos:
             fila = tk.Frame(caja, bg=PANEL)
@@ -811,7 +965,7 @@ class PanelCounting(Panel):
         self.t = self.tarjetas(self.cuerpo, [
             ("t", "Tiempo", ACENTO), ("n", "Elementos ordenados", VERDE),
             ("mem", "Memoria del arreglo de conteo", AMARILLO), ("v", "Tiempo por elemento", VIOLETA)])
-        tk.Label(self.cuerpo, text=("⚠ Reserva ≈ 800 MB de RAM (k + 1 = 100.000.001 posiciones de 8 bytes). "
+        tk.Label(self.cuerpo, text=("⚠ Reserva ≈ 400 MB de RAM (array('I') de k + 1 = 100.000.001 enteros de 4 bytes). "
                                     "Cerrá otras aplicaciones si tu equipo tiene poca memoria."),
                  bg=BG, fg=AMARILLO, font=self.app.f_texto, anchor="w").pack(fill="x", pady=(10, 0))
 
@@ -944,6 +1098,7 @@ class PanelAVL(PanelEstructura):
         self.agregar_boton_op(fila, "➕ Insertar", self.insertar, VERDE)
         self.agregar_boton_op(fila, "🔍 Buscar", self.buscar, ACENTO)
         self.agregar_boton_op(fila, "🗑 Eliminar", self.eliminar, ROJO)
+        self.agregar_boton_op(fila, "✔ Verificar AVL", self.verificar_avl, VIOLETA)
         self.tabla_ops = self.tabla(self.cuerpo, [("op", "Operación"), ("val", "Valor"), ("res", "Resultado"),
                                                   ("t", "Tiempo")], alto=4, anchos=[150, 150, 360, 110])
 
@@ -954,11 +1109,17 @@ class PanelAVL(PanelEstructura):
         self.estructura = r["estructura"]
         self.refrescar(r["t"])
         self.t["cota"].set(f"≈ {fmt_dec(1.44 * math.log2(r['n'] + 2), 1)}")
-        muestra = ", ".join(fmt_num(v) for v in r["muestra"])
-        self.lbl_muestra.config(text=f"Muestra InOrden (primeros 10): [{muestra}]")
+        self._actualizar_muestra(r["muestra"])
         self.habilitar_operaciones(True)
         self.app.registrar("Construcción del AVL", r["n"], r["t"])
         self.app.log(f"✔ AVL construido: {fmt_num(r['n'])} nodos, altura {r['altura']}, {fmt_tiempo(r['t'])}.", "ok")
+
+    def _actualizar_muestra(self, muestra=None):
+        if muestra is None:
+            muestra = []
+            self.estructura.in_orden(self.estructura.raiz, muestra, 10)
+        texto = ", ".join(fmt_num(v) for v in muestra) if muestra else "vacío"
+        self.lbl_muestra.config(text=f"Muestra InOrden (primeros 10): [{texto}]")
 
     def refrescar(self, t=None):
         a = self.estructura
@@ -979,6 +1140,7 @@ class PanelAVL(PanelEstructura):
         a.raiz = a.insertar(a.raiz, v)
         t = time.perf_counter() - t0
         self.refrescar()
+        self._actualizar_muestra()
         self.registrar_op("Inserción", fmt_num(v), f"Insertado · nodos: {fmt_num(a.total_nodos)} · altura: "
                           f"{a.obtener_altura(a.raiz)}", t)
 
@@ -997,53 +1159,90 @@ class PanelAVL(PanelEstructura):
         if v is None or self.app.ocupado:
             return
         a = self.estructura
-        t0 = time.perf_counter()
-        existe = a.buscar(a.raiz, v) is not None
-        if not existe:
-            t = time.perf_counter() - t0
-            self.registrar_op("Eliminación", fmt_num(v), "El valor no existe: no se eliminó nada", t)
-            return
+        nodos_antes = a.total_nodos
         t0 = time.perf_counter()
         a.raiz = a.eliminar(a.raiz, v)
         t = time.perf_counter() - t0
+        if a.total_nodos == nodos_antes:
+            self.registrar_op("Eliminación", fmt_num(v), "El valor no existe: no se eliminó nada", t)
+            return
         self.refrescar()
+        self._actualizar_muestra()
         self.registrar_op("Eliminación", fmt_num(v), f"Eliminado · nodos: {fmt_num(a.total_nodos)}", t)
+
+    def verificar_avl(self):
+        if self.app.ocupado or not self.estructura:
+            return
+        t0 = time.perf_counter()
+        ok = self.estructura.es_valido_avl()
+        t = time.perf_counter() - t0
+        res = "VÁLIDO (ABB + balanceo ∈ {-1, 0, 1})" if ok else "INVÁLIDO"
+        self.registrar_op("Verificar AVL", "—", res, t)
 
 
 class PanelHeap(PanelEstructura):
-    TITULO = "Max Heap"
+    TITULO = "Heap Binario (Max Heap / Min Heap)"
     ICONO = "⛰️"
     NOMBRE = "Heap"
     TAREA = staticmethod(tarea_heap_construir)
-    DESC = ("Consigna j) · Árbol binario completo almacenado en un arreglo; la raíz es siempre el máximo. "
-            "Inserción y extracción O(log n); búsqueda O(n). Se construye con inserciones sucesivas.")
+    DESC = ("Consigna j) · Árbol binario completo almacenado en un arreglo. Soporta Max Heap (raíz = máximo) y "
+            "Min Heap (raíz = mínimo). Inserción y extracción de raíz O(log n); búsqueda arbitraria O(n).")
 
     def construir(self):
-        self.construir_base("10.000.000", VIOLETA, [
-            ("n", "Cantidad de elementos", ACENTO), ("raiz", "Elemento raíz (máximo)", VERDE),
-            ("altura", "Altura aproximada", AMARILLO), ("t", "Tiempo de construcción", VIOLETA)])
-        fila = self.fila_operaciones()
-        self.agregar_boton_op(fila, "➕ Insertar", self.insertar, VERDE)
-        self.agregar_boton_op(fila, "🔍 Buscar", self.buscar, ACENTO)
-        self.agregar_boton_op(fila, "⬆ Extraer máximo", self.extraer, ROJO)
+        fila = tk.Frame(self.cuerpo, bg=BG)
+        fila.pack(fill="x")
+        self.var_n = self.campo(fila, "Cantidad de datos a cargar", "10.000.000", 0, 18)
+        self.var_tipo = tk.StringVar(value="max")
+        tipo_box = tk.Frame(fila, bg=BG)
+        tipo_box.grid(row=0, column=1, rowspan=2, sticky="sw", padx=(0, 14))
+        tk.Label(tipo_box, text="Tipo de montículo", bg=BG, fg=MUTED, font=self.app.f_texto, anchor="w").pack(anchor="w")
+        radios = tk.Frame(tipo_box, bg=BG)
+        radios.pack(anchor="w", pady=(4, 2))
+        for val, lbl in (("max", "Max Heap"), ("min", "Min Heap")):
+            tk.Radiobutton(radios, text=lbl, variable=self.var_tipo, value=val, bg=BG, fg=TEXTO,
+                           selectcolor=PANEL2, activebackground=BG, activeforeground=TEXTO,
+                           font=self.app.f_texto, highlightthickness=0).pack(side="left", padx=(0, 10))
+        Boton(fila, "▶  Construir Heap", self.construir_estructura, VIOLETA, self.app.f_boton).grid(
+            row=1, column=2, sticky="w")
+        self.t = self.tarjetas(self.cuerpo, [
+            ("n", "Cantidad de elementos", ACENTO), ("raiz", "Elemento raíz (máx / mín)", VERDE),
+            ("altura", "Altura (aristas / niveles)", AMARILLO), ("t", "Tiempo de construcción", VIOLETA)])
+        self.estructura = None
+        fila_op = self.fila_operaciones()
+        self.agregar_boton_op(fila_op, "➕ Insertar", self.insertar, VERDE)
+        self.agregar_boton_op(fila_op, "🔍 Buscar", self.buscar, ACENTO)
+        self.btn_extraer = self.agregar_boton_op(fila_op, "⬆ Extraer máximo", self.extraer, ROJO)
+        self.agregar_boton_op(fila_op, "✔ Verificar Heap", self.verificar_heap, VIOLETA)
         self.tabla_ops = self.tabla(self.cuerpo, [("op", "Operación"), ("val", "Valor"), ("res", "Resultado"),
-                                                  ("t", "Tiempo")], alto=4, anchos=[150, 150, 360, 110])
+                                                  ("t", "Tiempo")], alto=4, anchos=[160, 140, 360, 110])
+
+    def construir_estructura(self):
+        n = self.entero(self.var_n, 1, "La cantidad")
+        if n is not None and self.app.requiere_datos():
+            self.habilitar_operaciones(False)
+            self.app.ejecutar(tarea_heap_construir, n, self.var_tipo.get(), al_terminar=self.construido)
 
     def cantidad_actual(self):
         return len(self.estructura.heap) if self.estructura else 0
 
+    def _etiqueta_tipo(self):
+        return "Max Heap" if (self.estructura and self.estructura.es_max) else "Min Heap"
+
     def construido(self, r):
         self.estructura = r["estructura"]
+        es_max = self.estructura.es_max
+        self.btn_extraer.config(text="⬆ Extraer máximo" if es_max else "⬇ Extraer mínimo")
         self.refrescar(r["t"])
         self.habilitar_operaciones(True)
-        self.app.registrar("Construcción del Max Heap", r["n"], r["t"])
-        self.app.log(f"✔ Max Heap construido: {fmt_num(r['n'])} elementos, {fmt_tiempo(r['t'])}.", "ok")
+        nombre = self._etiqueta_tipo()
+        self.app.registrar(f"Construcción del {nombre}", r["n"], r["t"])
+        self.app.log(f"✔ {nombre} construido: {fmt_num(r['n'])} elementos, {fmt_tiempo(r['t'])}.", "ok")
 
     def refrescar(self, t=None):
         h = self.estructura
         self.t["n"].set(fmt_num(len(h.heap)))
         self.t["raiz"].set(fmt_num(h.heap[0]) if h.heap else "Vacío")
-        self.t["altura"].set(str(h.altura_aprox()))
+        self.t["altura"].set(f"{h.altura_aprox()} ({h.altura_niveles()} niv.)" if h.heap else "0")
         if t is not None:
             self.t["t"].set(fmt_tiempo(t))
 
@@ -1059,7 +1258,8 @@ class PanelHeap(PanelEstructura):
         h.insertar(v)
         t = time.perf_counter() - t0
         self.refrescar()
-        self.registrar_op("Inserción", fmt_num(v), f"Insertado · raíz: {fmt_num(h.heap[0])}", t)
+        self.registrar_op(f"Inserción ({self._etiqueta_tipo()})", fmt_num(v),
+                          f"Insertado · raíz: {fmt_num(h.heap[0])}", t)
 
     def buscar(self):
         v = self.valor()
@@ -1075,13 +1275,23 @@ class PanelHeap(PanelEstructura):
         if self.app.ocupado:
             return
         h = self.estructura
+        rol = "máximo" if h.es_max else "mínimo"
         t0 = time.perf_counter()
-        maximo = h.extraer_maximo()
+        ext = h.extraer_raiz()
         t = time.perf_counter() - t0
         self.refrescar()
         nueva = fmt_num(h.heap[0]) if h.heap else "ninguna"
-        self.registrar_op("Extraer máximo", fmt_num(maximo) if maximo is not None else "—",
+        self.registrar_op(f"Extraer {rol}", fmt_num(ext) if ext is not None else "—",
                           f"Nueva raíz: {nueva}", t)
+
+    def verificar_heap(self):
+        if self.app.ocupado or not self.estructura:
+            return
+        t0 = time.perf_counter()
+        ok = self.estructura.es_valido_heap()
+        t = time.perf_counter() - t0
+        nombre = self._etiqueta_tipo()
+        self.registrar_op("Verificar Heap", "—", f"VÁLIDO ({nombre})" if ok else "INVÁLIDO", t)
 
 
 class PanelHeapSort(Panel):
@@ -1115,7 +1325,9 @@ class PanelHeapSort(Panel):
         proy = t * (1e8 * math.log2(1e8)) / (n * math.log2(max(n, 2)))
         self.t["proy"].set(fmt_duracion_larga(proy))
         self.app.registrar("Heap Sort", n, t)
-        self.app.log(f"✔ Heap Sort finalizado en {fmt_tiempo(t)}. Guardado en Datos_HeapSort.txt.", "ok")
+        verif = "✔ ORDENADO" if r.get("verificado") else "✖ NO ORDENADO"
+        self.app.log(f"✔ Heap Sort finalizado en {fmt_tiempo(t)}. Guardado en Datos_HeapSort.txt ({verif}).",
+                     "ok" if r.get("verificado") else "error")
 
 
 class PanelVerificar(Panel):
@@ -1153,28 +1365,89 @@ class PanelVerificar(Panel):
 
 
 class PanelComparativa(Panel):
-    TITULO = "Comparativa de tiempos"
+    TITULO = "Comparativa y Análisis Teórico (Consignas g y l)"
     ICONO = "📊"
-    DESC = ("Resumen de todas las mediciones de esta sesión. El gráfico permite comparar visualmente los algoritmos; "
-            "podés exportar los datos a un CSV para tu informe.")
+    DESC = ("Mediciones registradas en esta sesión, gráfico comparativo, exportación a CSV y tablas teóricas "
+            "comparativas de estructuras (AVL vs Heap) y algoritmos de ordenamiento (Consigna l).")
 
     COLORES = {"Counting": VERDE, "Selection": ROJO, "Heap Sort": ACENTO, "AVL": AMARILLO,
-               "Heap": VIOLETA, "Generación": MUTED, "Máx": "#39c5cf", "Verificación": "#6e7681"}
+               "Heap": VIOLETA, "Construcción del": VIOLETA, "Generación": MUTED,
+               "Máx": "#39c5cf", "Verificación": "#6e7681"}
 
     def construir(self):
         fila = tk.Frame(self.cuerpo, bg=BG)
         fila.pack(fill="x")
         self.var_log = tk.BooleanVar(value=True)
+        self.vista = "mediciones"
+        self.btn_med = Boton(fila, "📊  Mediciones y gráfico", lambda: self._cambiar_vista("mediciones"),
+                             ACENTO, self.app.f_texto, 14, 7)
+        self.btn_med.pack(side="left")
+        self.btn_teo = Boton(fila, "📋  Análisis teórico (Consigna l)", lambda: self._cambiar_vista("teoria"),
+                             DESHAB, self.app.f_texto, 14, 7)
+        self.btn_teo.pack(side="left", padx=(8, 14))
         Boton(fila, "💾  Exportar CSV", self.exportar, VERDE, self.app.f_texto, 14, 7).pack(side="left")
         Boton(fila, "🧹  Borrar historial", self.borrar, DESHAB, self.app.f_texto, 14, 7).pack(side="left", padx=8)
         tk.Checkbutton(fila, text="Escala logarítmica", variable=self.var_log, command=self.dibujar, bg=BG, fg=TEXTO,
                        selectcolor=PANEL2, activebackground=BG, activeforeground=TEXTO, font=self.app.f_texto,
-                       highlightthickness=0, bd=0).pack(side="left", padx=14)
-        self.lienzo = tk.Canvas(self.cuerpo, bg=PANEL, height=250, highlightthickness=1, highlightbackground=BORDE)
-        self.lienzo.pack(fill="x", pady=(12, 0))
+                       highlightthickness=0, bd=0).pack(side="left", padx=10)
+
+        self.cont_med = tk.Frame(self.cuerpo, bg=BG)
+        self.cont_med.pack(fill="both", expand=True)
+        self.lienzo = tk.Canvas(self.cont_med, bg=PANEL, height=235, highlightthickness=1, highlightbackground=BORDE)
+        self.lienzo.pack(fill="x", pady=(10, 0))
         self.lienzo.bind("<Configure>", lambda e: self.dibujar())
-        self.tabla_h = self.tabla(self.cuerpo, [("op", "Medición"), ("n", "n"), ("t", "Tiempo"), ("e", "µs por elemento"),
-                                                ("h", "Hora")], alto=5, anchos=[330, 150, 140, 140, 90])
+        self.tabla_h = self.tabla(self.cont_med, [("op", "Medición"), ("n", "n"), ("t", "Tiempo"),
+                                                  ("e", "µs por elemento"), ("h", "Hora")],
+                                  alto=5, anchos=[330, 150, 140, 140, 90])
+
+        self.cont_teo = tk.Frame(self.cuerpo, bg=BG)
+        tk.Label(self.cont_teo, text="Estructuras de Datos: Árbol AVL vs Heap Binario", bg=BG, fg=TEXTO,
+                 font=self.app.f_negrita, anchor="w").pack(fill="x", pady=(10, 0))
+        t_est = self.tabla(self.cont_teo, [("op", "Operación"), ("avl", "Árbol AVL"), ("heap", "Heap Binario (Max/Min)")],
+                           alto=4, anchos=[160, 290, 340])
+        for i, row in enumerate([
+            ("Inserción", "O(log n) con rotaciones", "O(log n) peor caso; O(1) promedio"),
+            ("Búsqueda", "O(log n) (búsqueda binaria)", "O(n) (recorrido secuencial)"),
+            ("Eliminación", "O(log n) cualquier valor", "O(log n) raíz; O(n) valor arbitrario"),
+            ("Acceso raíz / Mem.", "O(log n) mín/máx · nodos con punteros", "O(1) raíz · arreglo contiguo compacto"),
+        ]):
+            t_est.insert("", "end", values=row, tags=("par",) if i % 2 else ())
+
+        tk.Label(self.cont_teo, text="Algoritmos de Ordenamiento: Complejidad y Eficiencia", bg=BG, fg=TEXTO,
+                 font=self.app.f_negrita, anchor="w").pack(fill="x", pady=(12, 0))
+        t_ord = self.tabla(self.cont_teo, [("alg", "Algoritmo"), ("mej", "Mejor Caso"), ("peor", "Peor Caso"),
+                                           ("esp", "Espacio Aux."), ("inp", "In-Place"), ("est", "Estable")],
+                           alto=3, anchos=[170, 120, 120, 120, 100, 100])
+        for i, row in enumerate([
+            ("Counting Sort", "O(n + k)", "O(n + k)", "O(k)", "No", "Sí*"),
+            ("Selection Sort", "O(n²)", "O(n²)", "O(1)", "Sí", "No"),
+            ("Heap Sort", "O(n log n)", "O(n log n)", "O(1)", "Sí", "No"),
+        ]):
+            t_ord.insert("", "end", values=row, tags=("par",) if i % 2 else ())
+
+        tk.Label(self.cont_teo,
+                 text=("Conclusión: Para 100 M de enteros en rango acotado, Counting Sort es el más rápido (O(n + k)) "
+                       "a costa de O(k) RAM. Como opción general in-place, Heap Sort garantiza O(n log n). Selection Sort "
+                       "(O(n²)) es inviable a gran escala. AVL gana en búsquedas frecuentes; Heap gana en colas de prioridad."),
+                 bg=BG, fg=MUTED, font=self.app.f_chico, justify="left", wraplength=820, anchor="w").pack(fill="x", pady=(10, 0))
+
+    def _cambiar_vista(self, vista):
+        self.vista = vista
+        if vista == "mediciones":
+            self.cont_teo.pack_forget()
+            self.cont_med.pack(fill="both", expand=True)
+            self.btn_med.color = ACENTO
+            self.btn_med.config(bg=ACENTO)
+            self.btn_teo.color = DESHAB
+            self.btn_teo.config(bg=DESHAB)
+            self.dibujar()
+        else:
+            self.cont_med.pack_forget()
+            self.cont_teo.pack(fill="both", expand=True)
+            self.btn_teo.color = ACENTO
+            self.btn_teo.config(bg=ACENTO)
+            self.btn_med.color = DESHAB
+            self.btn_med.config(bg=DESHAB)
 
     def al_mostrar(self):
         self.refrescar()
@@ -1313,8 +1586,8 @@ class App(tk.Tk):
         opciones = [("inicio", "🏠", "Inicio"), ("generar", "🎲", "1 · Generar datos"),
                     ("analizar", "🔎", "2 · Máx, mín y frecuencias"), ("counting", "🟢", "3 · Counting Sort"),
                     ("selection", "🔴", "4 · Selection Sort"), ("avl", "🌳", "5 · Árbol AVL"),
-                    ("heap", "⛰️", "6 · Max Heap"), ("heapsort", "🔵", "7 · Heap Sort"),
-                    ("verificar", "✅", "8 · Verificar orden"), ("comparativa", "📊", "9 · Comparativa")]
+                    ("heap", "⛰️", "6 · Heap (Max / Min)"), ("heapsort", "🔵", "7 · Heap Sort"),
+                    ("verificar", "✅", "8 · Verificar orden"), ("comparativa", "📊", "9 · Comparativa (g, l)")]
         for clave, icono, texto in opciones:
             self._item_menu(lateral, clave, f"{icono}   {texto}")
         tk.Label(lateral, text="Jeremías Mendoza\nProf. Reinaldo Gómez\nUNViMe · 2026", bg=PANEL, fg=MUTED,
